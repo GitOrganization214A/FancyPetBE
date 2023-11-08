@@ -41,3 +41,10 @@ from django.http import JsonResponse
 def hello_world(request):
     return JsonResponse({"message": "Hello, world!"})
 ```
+
+####数据库修改
+每次修改数据库配置需要执行迁移
+```
+python manage.py makemigrations
+python manage.py migrate
+```

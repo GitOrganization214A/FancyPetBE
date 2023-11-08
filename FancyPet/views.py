@@ -22,7 +22,6 @@ def changeInfo(request):
 
 
 def login(request):
-    print(request.GET)
     code = request.GET.get('code')  # 从请求中获取code
     # 获取session_key和openid
     url = "https://api.weixin.qq.com/sns/jscode2session"  # 微信服务器的URL
@@ -38,17 +37,29 @@ def login(request):
     data = response.json()  # 解析响应
     # session_key = data.get('session_key')
     openid = data.get('openid')
-    print(data)
 
-    # # 获取access_token
-    # url = "https://api.weixin.qq.com/cgi-bin/token"
-    # params = {
-    #     "grant_type": "client_credential",
-    #     "appid": "wx17396561c08eee6a",
-    #     "secret": "1553b8c2bdf47f280ffeb61c989e0f50"
-    # }
-    # response = requests.get(url, params=params)
-    # data = response.json()
-    # access_token = data.get('access_token')
+    user = User.objects.filter(openid=openid)
+    if user:
+        user = user[0]
+        data = {
+            'openid': openid,
+            # 设置nickname为空
+            'nickname': user.nickname,
+            'avatar': user.avatar,
+            'follow': user.follow,
+            'atcnum': user.atcnum,
+            'fans': user.fans,
+        }
+    else:
+        user = User.objects.create(
+            openid=openid, nickname="nickname", avatar=None)
+        data = {
+            'openid': openid,
+            'nickname': None,
+            'avatar': None,
+            'follow': 0,
+            'atcnum': 0,
+            'fans': 0,
+        }
 
     return JsonResponse(data)  # 返回响应
