@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from .models import User
+from .models import User, Article
 import requests
 
 
@@ -63,3 +63,62 @@ def login(request):
         }
 
     return JsonResponse(data)  # 返回响应
+
+
+def getUserInfo(openid):
+    user = User.objects.filter(openid=openid)
+    if user:
+        user = user[0]
+        data = {
+            'openid': openid,
+            # 设置nickname为空
+            'nickname': user.nickname,
+            'avatar': user.avatar,
+        }
+    else:
+        data = {
+            'openid': openid,
+            'nickname': None,
+            'avatar': None,
+        }
+    return data
+
+
+def articles(request):
+    # 获取数据库中所有的Article对象
+    articles = Article.objects.all()
+    data = []
+    for article in articles:
+        # 将每个Article对象转换成字典
+        info = getUserInfo(article.openid)
+        data.append({
+            'openid': article.openid,
+            'nickname': info['nickname'],
+            'avatar': info['avatar'],
+            'title': article.title,
+            'content': article.content,
+            'image': article.image,
+            'time': article.time,
+            'like': article.like,
+            'comment': article.comment,
+            'read': article.read,
+        })
+    print(data)
+    return JsonResponse(data, safe=False)
+
+
+def init(request):
+    # 删除数据库中所有的Article对象
+    Article.objects.all().delete()
+    # 给数据库中添加一个Article对象
+    Article.objects.create(
+        openid="o5f8E5Y6Qb4YbV3tY1kDy8Rj5Z3s",
+        title="标题",
+        content="内容",
+        image="https://www.baidu.com/img/bd_logo1.png",
+        time="2020-01-01",
+        like=0,
+        comment=0,
+        read=0
+    )
+    return
