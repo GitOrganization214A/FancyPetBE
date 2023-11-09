@@ -84,7 +84,7 @@ def getUserInfo(openid):
     return data
 
 
-def articles(request):
+def HotArticles(request):
     # 获取数据库中所有的Article对象
     articles = Article.objects.all()
     data = []
