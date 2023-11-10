@@ -25,6 +25,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path('api/v1/login/', views.login, name='login'),
     path('api/v1/changeInfo/', views.changeInfo, name='changeInfo'),
+    path('api/v1/changeAvatar/', views.changeAvatar, name='changeAvatar'),
     path('api/v1/HotArticles/', views.HotArticles, name='HotArticles'),
     path('api/v1/init/', views.init, name='init'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

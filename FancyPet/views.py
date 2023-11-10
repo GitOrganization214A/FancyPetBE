@@ -1,24 +1,44 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from .models import User, Article
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 import requests
 import json
+import os
+
+host_name = 'http://127.0.0.1:8000/'
+
+
+@csrf_exempt
+def changeAvatar(request):
+    print(request)
+    files = request.FILES
+    content = files.get('avatar', None).read()
+    openid = request.POST.get('openid')
+    print(openid)
+    with open('media/user/'+openid+'.png', 'wb') as f:
+        f.write(content)
+    user = User.objects.filter(openid=openid)
+    if user:
+        user = user[0]
+        user.avatar = host_name+'media/user/'+openid+'.png'
+        user.save()
+    return JsonResponse({'status': 'success'})
 
 
 def changeInfo(request):
     openid = request.GET.get('openid')
     nickname = request.GET.get('nickname')
-    avatar = request.GET.get('avatar')
 
     user = User.objects.filter(openid=openid)
     if user:
         user = user[0]
         user.nickname = nickname
-        user.avatar = avatar
         user.save()
     else:
         user = User.objects.create(
-            openid=openid, nickname=nickname, avatar=avatar)
+            openid=openid, nickname=nickname)
     return JsonResponse({'status': 'success'})
 
 
@@ -36,9 +56,9 @@ def login(request):
 
     response = requests.get(url, params=params)  # 发送请求
     data = response.json()  # 解析响应
+
     # session_key = data.get('session_key')
     openid = data.get('openid')
-
     user = User.objects.filter(openid=openid)
     if user:
         user = user[0]
@@ -53,16 +73,16 @@ def login(request):
         }
     else:
         user = User.objects.create(
-            openid=openid, nickname="nickname", avatar=None)
+            openid=openid, nickname="nickname", avatar=host_name+'media/user/logo.png')
         data = {
             'openid': openid,
             'nickname': None,
-            'avatar': None,
+            'avatar': host_name+'media/user/logo.png',
             'follow': 0,
             'atcnum': 0,
             'fans': 0,
         }
-
+    print(data)
     return JsonResponse(data)  # 返回响应
 
 
@@ -95,7 +115,7 @@ def HotArticles(request):
         data.append({
             'openid': article.openid,
             'nickname': info['nickname'],
-            'avatar': 'http://127.0.0.1:8000/media/article/logo.png',
+            'avatar': host_name+'media/article/logo.png',
             'title': article.title,
             'content': article.content,
             'images': json.loads(article.images),
