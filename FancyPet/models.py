@@ -17,8 +17,17 @@ class Article(models.Model):
     openid = models.CharField(max_length=255)
     title = models.CharField(max_length=255)
     content = models.TextField()
-    image = models.CharField(max_length=255)
+    images = models.JSONField(
+        blank=True,
+        null=True
+    )
     time = models.DateTimeField(auto_now_add=True)
     like = models.IntegerField(default=0)
     comment = models.IntegerField(default=0)
     read = models.IntegerField(default=0)
+
+
+# class ArticleImage(models.Model):
+#     article = models.ForeignKey(
+#         Article, on_delete=models.CASCADE, related_name='images')
+#     image = models.ImageField(upload_to='article/')

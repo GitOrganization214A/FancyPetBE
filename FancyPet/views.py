@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from .models import User, Article
 import requests
+import json
 
 
 def changeInfo(request):
@@ -94,10 +95,10 @@ def HotArticles(request):
         data.append({
             'openid': article.openid,
             'nickname': info['nickname'],
-            'avatar': info['avatar'],
+            'avatar': 'http://127.0.0.1:8000/media/article/logo.png',
             'title': article.title,
             'content': article.content,
-            'image': article.image,
+            'images': json.loads(article.images),
             'time': article.time,
             'like': article.like,
             'comment': article.comment,
@@ -110,15 +111,19 @@ def HotArticles(request):
 def init(request):
     # 删除数据库中所有的Article对象
     Article.objects.all().delete()
+
     # 给数据库中添加一个Article对象
     Article.objects.create(
-        openid="o5f8E5Y6Qb4YbV3tY1kDy8Rj5Z3s",
+        openid="ob66w612B_fnXnoIqnIGPvfy6HxY",
         title="标题",
         content="内容",
-        image="https://www.baidu.com/img/bd_logo1.png",
+        images=json.dumps([
+            'http://127.0.0.1:8000/media/article/logo.png',
+            'http://127.0.0.1:8000/media/article/background.jpg',
+        ]),
         time="2020-01-01",
-        like=0,
-        comment=0,
-        read=0
+        like=1,
+        comment=2,
+        read=3
     )
-    return
+    return JsonResponse({'status': 'success'})
