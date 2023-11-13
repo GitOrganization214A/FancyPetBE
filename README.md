@@ -45,6 +45,6 @@ def hello_world(request):
 ####数据库修改
 每次修改数据库配置需要执行迁移
 ```
-python manage.py makemigrations
-python manage.py migrate
+python3 manage.py makemigrations
+python3 manage.py migrate
 ```

@@ -14,6 +14,7 @@ class User(models.Model):
 
 class Article(models.Model):
     openid = models.CharField(max_length=255)
+    ArticleID = models.CharField(max_length=255, default='0')
     title = models.CharField(max_length=255)
     content = models.TextField()
     images = models.JSONField(
@@ -25,6 +26,23 @@ class Article(models.Model):
     comment = models.IntegerField(default=0)
     read = models.IntegerField(default=0)
 
+
+class PetSpace(models.Model):
+    openid = models.CharField(max_length=255)
+    PetSpaceID = models.CharField(max_length=255, default='0')
+    name = models.CharField(max_length=255)
+    breed = models.CharField(max_length=255)
+    avatar = models.CharField(max_length=255)
+    images = models.JSONField(
+        blank=True,
+        null=True
+    )
+
+
+class Count(models.Model):
+    CountID = models.CharField(max_length=255)
+    ArticleNum = models.IntegerField(default=0)
+    PetSpaceNum = models.IntegerField(default=0)
 
 # class ArticleImage(models.Model):
 #     article = models.ForeignKey(

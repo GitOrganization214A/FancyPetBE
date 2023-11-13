@@ -1,13 +1,33 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from .models import User, Article
+from .models import User, Article, PetSpace, Count
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+
 import requests
 import json
 import os
 
-host_name = 'http://127.0.0.1:8000/'
+host_name = 'http://43.143.139.4:8000/'
+
+
+def PetSpaces(request):
+    print(request)
+    openid = request.GET.get('openid')
+    print(openid)
+    # 获取数据库中所有的PetSpace对象
+    petspaces = PetSpace.objects.filter(openid=openid)
+    data = []
+    for petspace in petspaces:
+        # 将每个PetSpace对象转换成字典
+        data.append({
+            'openid': petspace.openid,
+            'PetSpaceID': petspace.PetSpaceID,
+            'name': petspace.name,
+            'breed': petspace.breed,
+            'avatar': petspace.avatar,
+        })
+    print(data)
+    return JsonResponse(data, safe=False)
 
 
 @csrf_exempt
@@ -114,8 +134,9 @@ def HotArticles(request):
         info = getUserInfo(article.openid)
         data.append({
             'openid': article.openid,
+            'ArticleID': article.ArticleID,
             'nickname': info['nickname'],
-            'avatar': host_name+'media/article/logo.png',
+            'avatar': info['avatar'],
             'title': article.title,
             'content': article.content,
             'images': json.loads(article.images),
@@ -129,21 +150,74 @@ def HotArticles(request):
 
 
 def init(request):
+    Count.objects.all().delete()
+    Count.objects.create(
+        CountID="1",
+        ArticleNum=0,
+        PetSpaceNum=0,
+    )
+    count = Count.objects.get(CountID="1")
+
+    PetSpace.objects.all().delete()
+    PetSpace.objects.create(
+        openid="ob66w67W7KbxFUShl2c3Q-Z4Pi5Y",
+        PetSpaceID=str(count.PetSpaceNum),
+        name="溪小明儿",
+        breed="英吉利斗牛犬",
+        avatar=host_name+'media/user/logo.png',
+    )
+    count.PetSpaceNum += 1
+    PetSpace.objects.create(
+        openid="ob66w67W7KbxFUShl2c3Q-Z4Pi5Y",
+        PetSpaceID=str(count.PetSpaceNum),
+        name="fancy",
+        breed="英短",
+        avatar=host_name+'media/user/logo.png',
+    )
+    print(count.PetSpaceNum)
+    count.PetSpaceNum += 1
+    count.save()
+
     # 删除数据库中所有的Article对象
     Article.objects.all().delete()
 
     # 给数据库中添加一个Article对象
+    count = Count.objects.get(CountID="1")
     Article.objects.create(
         openid="ob66w612B_fnXnoIqnIGPvfy6HxY",
+        ArticleID=str(count.ArticleNum),
         title="标题",
         content="内容",
         images=json.dumps([
-            'http://127.0.0.1:8000/media/article/logo.png',
-            'http://127.0.0.1:8000/media/article/background.jpg',
+            'http://43.143.139.4:8000/media/article/background.jpg',
+            'http://43.143.139.4:8000/media/article/background.jpg',
+            'http://43.143.139.4:8000/media/article/background.jpg',
+            'http://43.143.139.4:8000/media/article/background.jpg',
+            'http://43.143.139.4:8000/media/article/background.jpg',
+            'http://43.143.139.4:8000/media/article/background.jpg',
+            'http://43.143.139.4:8000/media/article/background.jpg',
+            'http://43.143.139.4:8000/media/article/background.jpg',
+            'http://43.143.139.4:8000/media/article/background.jpg',
         ]),
         time="2020-01-01",
         like=1,
         comment=2,
         read=3
     )
+    count.ArticleNum += 1
+    Article.objects.create(
+        openid="ob66w612B_fnXnoIqnIGPvfy6HxY",
+        ArticleID=str(count.ArticleNum),
+        title="标题2",
+        content="内容2",
+        images=json.dumps([
+            'http://43.143.139.4:8000/media/article/background.jpg',
+        ]),
+        time="2020-01-01",
+        like=1,
+        comment=2,
+        read=3
+    )
+    count.ArticleNum += 1
+    count.save()
     return JsonResponse({'status': 'success'})
