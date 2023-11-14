@@ -10,6 +10,67 @@ import os
 host_name = 'http://43.143.139.4:8000/'
 
 
+def like(request):
+    ArticleID = request.GET.get('ArticleID')
+    operartion = request.GET.get('operation')
+    openid = request.GET.get('openid')
+    user = User.objects.get(openid=openid)
+    likedArticles = json.loads(
+        user.likedArticles) if user.likedArticles else []
+    print(operartion)
+    article = Article.objects.get(ArticleID=ArticleID)
+    if article:
+        if operartion == 'like':
+            article.like += 1
+            likedArticles.append(ArticleID)
+        elif operartion == 'cancel' and ArticleID in likedArticles:
+            article.like -= 1
+            likedArticles.remove(ArticleID)
+        article.save()
+        user.likedArticles = json.dumps(likedArticles)
+        user.save()
+        return JsonResponse({'status': 'success'})
+    else:
+        return JsonResponse({'status': 'No such article'})
+
+
+def postArticle(request):
+    print(request)
+    images = request.FILES.getlist('images')
+    openid = request.POST.get('openid')
+    title = request.POST.get('title')
+    content = request.POST.get('content')
+    images = request.POST.get('images')
+
+    # 给数据库中添加一个Article对象
+    count = Count.objects.get(CountID="1")
+    article = Article.objects.create(
+        openid=openid,
+        ArticleID=str(count.ArticleNum),
+        title=title,
+        content=content,
+        like=0,
+        comment=0,
+        read=0,
+    )
+    count.ArticleNum += 1
+    count.save()
+
+    ArticleImage = []
+    # 将图片保存到本地
+    num = 1
+    for image in images:
+        path = 'media/article/'+str(count.ArticleNum)+'_'+str(num)+'.jpg'
+        with open(path, 'wb') as f:
+            f.write(image.read())
+        num += 1
+        ArticleImage.append(host_name+path)
+
+    article.images = json.dumps(ArticleImage)
+    article.save()
+    return JsonResponse({'status': 'success'})
+
+
 def PetSpaces(request):
     print(request)
     openid = request.GET.get('openid')
@@ -37,7 +98,7 @@ def changeAvatar(request):
     content = files.get('avatar', None).read()
     openid = request.POST.get('openid')
     print(openid)
-    with open('media/user/'+openid+'.png', 'wb') as f:
+    with open('media/user/'+openid+'.jpg', 'wb') as f:
         f.write(content)
     user = User.objects.filter(openid=openid)
     if user:
@@ -126,6 +187,11 @@ def getUserInfo(openid):
 
 
 def HotArticles(request):
+    openid = request.GET.get('openid')
+    print(openid)
+    user = User.objects.get(openid=openid)
+    likedArticles = json.loads(
+        user.likedArticles) if user.likedArticles else []
     # 获取数据库中所有的Article对象
     articles = Article.objects.all()
     data = []
@@ -144,6 +210,7 @@ def HotArticles(request):
             'like': article.like,
             'comment': article.comment,
             'read': article.read,
+            'liked': article.ArticleID in likedArticles,
         })
     print(data)
     return JsonResponse(data, safe=False)

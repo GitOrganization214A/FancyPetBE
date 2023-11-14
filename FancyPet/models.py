@@ -10,6 +10,10 @@ class User(models.Model):
     follow = models.IntegerField(default=0)
     atcnum = models.IntegerField(default=0)
     fans = models.IntegerField(default=0)
+    likedArticles = models.JSONField(
+        blank=True,
+        null=True
+    )
 
 
 class Article(models.Model):
@@ -43,8 +47,3 @@ class Count(models.Model):
     CountID = models.CharField(max_length=255)
     ArticleNum = models.IntegerField(default=0)
     PetSpaceNum = models.IntegerField(default=0)
-
-# class ArticleImage(models.Model):
-#     article = models.ForeignKey(
-#         Article, on_delete=models.CASCADE, related_name='images')
-#     image = models.ImageField(upload_to='article/')

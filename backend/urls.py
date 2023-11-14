@@ -29,4 +29,6 @@ urlpatterns = [
     path('api/v1/HotArticles/', views.HotArticles, name='HotArticles'),
     path('api/v1/init/', views.init, name='init'),
     path('api/v1/PetSpaces/', views.PetSpaces, name='PetSpaces'),
+    path('api/v1/postArticle/', views.postArticle, name='postArticle'),
+    path('api/v1/like/', views.like, name='like'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
