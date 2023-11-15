@@ -31,6 +31,38 @@ def postComment(request):
         return JsonResponse({'status': 'No such article'})
 
 
+@csrf_exempt
+def newPetSpace(request):
+    print(request.POST)
+    avatar = request.FILES.get('avatar', None).read()
+    openid = request.POST.get('openid')
+    name = request.POST.get('name')
+    breed = request.POST.get('breed')
+    year = request.POST.get('year')
+    month = request.POST.get('month')
+    gender = request.POST.get('gender')
+
+    count = Count.objects.get(CountID="1")
+    path = 'media/PetSpace/'+str(count.PetSpaceNum)+'.jpg'
+    PetSpace.objects.create(
+        openid=openid,
+        PetSpaceID=str(count.PetSpaceNum),
+        name=name,
+        avatar=host_name+path,
+        breed=breed,
+        year=year,
+        month=month,
+        gender=gender,
+    )
+    count.PetSpaceNum += 1
+    count.save()
+
+    with open(path, 'wb') as f:
+        f.write(avatar)
+
+    return JsonResponse({'status': 'success'})
+
+
 def viewArticle(request):
     ArticleID = request.GET.get('ArticleID')
     openid = request.GET.get('openid')

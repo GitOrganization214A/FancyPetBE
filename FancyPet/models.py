@@ -32,13 +32,6 @@ class Article(models.Model):
     read = models.IntegerField(default=0)
     share = models.IntegerField(default=0)
 
-    # def create(self, *args, **kwargs):
-    #     # 设置为北京时间
-    #     self.time = timezone.localtime(
-    #         timezone.now(), timezone=pytz.timezone('Asia/Shanghai'))
-    #     self.time = self.time.strftime("%Y-%m-%d %H:%M:%S")
-    #     super().save(*args, **kwargs)
-
 
 class PetSpace(models.Model):
     openid = models.CharField(max_length=255)
@@ -46,6 +39,9 @@ class PetSpace(models.Model):
     name = models.CharField(max_length=255)
     breed = models.CharField(max_length=255)
     avatar = models.CharField(max_length=255)
+    year = models.CharField(max_length=255, default='')
+    month = models.CharField(max_length=255, default='')
+    gender = models.CharField(max_length=255, default='')
     images = models.JSONField(
         blank=True,
         null=True
@@ -59,13 +55,6 @@ class Comment(models.Model):
     content = models.TextField()
     time = models.DateTimeField(auto_now_add=True)
     like = models.IntegerField(default=0)
-
-    # def save(self, *args, **kwargs):
-    #     # 设置为北京时间
-    #     self.time = timezone.localtime(
-    #         timezone.now(), timezone=pytz.timezone('Asia/Shanghai'))
-    #     self.time = self.time.strftime("%Y-%m-%d %H:%M:%S")
-    #     super().save(*args, **kwargs)
 
 
 class Count(models.Model):
