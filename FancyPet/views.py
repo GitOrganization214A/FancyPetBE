@@ -1,13 +1,85 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from .models import User, Article, PetSpace, Count
+from .models import User, Article, PetSpace, Count, Comment
 from django.views.decorators.csrf import csrf_exempt
-
 import requests
 import json
 import os
 
 host_name = 'http://43.143.139.4:8000/'
+
+
+def postComment(request):
+    ArticleID = request.GET.get('ArticleID')
+    openid = request.GET.get('openid')
+    content = request.GET.get('content')
+    article = Article.objects.get(ArticleID=ArticleID)
+    if article:
+        article.comment += 1
+        article.save()
+        user = User.objects.get(openid=openid)
+        info = getUserInfo(openid)
+        data = {
+            'openid': openid,
+            'ArticleID': ArticleID,
+            'nickname': info['nickname'],
+            'avatar': info['avatar'],
+            'content': content,
+        }
+        return JsonResponse(data)
+    else:
+        return JsonResponse({'status': 'No such article'})
+
+
+def viewArticle(request):
+    ArticleID = request.GET.get('ArticleID')
+    openid = request.GET.get('openid')
+    article = Article.objects.get(ArticleID=ArticleID)
+
+    if article:
+        article.read += 1
+        article.save()
+
+        user = User.objects.get(openid=openid)
+        likedArticles = json.loads(
+            user.likedArticles) if user.likedArticles else []
+
+        # 找到帖子的评论
+        comments = []
+        commentList = Comment.objects.filter(ArticleID=ArticleID)
+        for comment in commentList:
+            info = getUserInfo(comment.openid)
+            comments.append({
+                'openid': comment.openid,
+                'ArticleID': comment.ArticleID,
+                'CommentID': comment.CommentID,
+                'nickname': info['nickname'],
+                'avatar': info['avatar'],
+                'content': comment.content,
+                'time': comment.time.strftime("%Y-%m-%d %H:%M:%S"),
+                'like': comment.like,
+            })
+
+        info = getUserInfo(article.openid)
+        data = {
+            'openid': article.openid,
+            'ArticleID': article.ArticleID,
+            'nickname': info['nickname'],
+            'avatar': info['avatar'],
+            'title': article.title,
+            'content': article.content,
+            'images': json.loads(article.images),
+            'time': article.time.strftime("%Y-%m-%d %H:%M:%S"),
+            'like': article.like,
+            'comment': article.comment,
+            'read': article.read,
+            'share': article.share,
+            'liked': article.ArticleID in likedArticles,
+            'comments': comments,
+        }
+        return JsonResponse(data)
+    else:
+        return JsonResponse({'status': 'No such article'})
 
 
 def like(request):
@@ -34,41 +106,43 @@ def like(request):
         return JsonResponse({'status': 'No such article'})
 
 
+@csrf_exempt
 def postArticle(request):
-    print(request)
-    images = request.FILES.getlist('images')
-    openid = request.POST.get('openid')
-    title = request.POST.get('title')
-    content = request.POST.get('content')
-    images = request.POST.get('images')
+    print("get:", request.GET)
+    print("post:", request.POST)
+    if request.method == 'GET':
+        count = Count.objects.get(CountID="1")
+        images = []
 
-    # 给数据库中添加一个Article对象
-    count = Count.objects.get(CountID="1")
-    article = Article.objects.create(
-        openid=openid,
-        ArticleID=str(count.ArticleNum),
-        title=title,
-        content=content,
-        like=0,
-        comment=0,
-        read=0,
-    )
-    count.ArticleNum += 1
-    count.save()
-
-    ArticleImage = []
-    # 将图片保存到本地
-    num = 1
-    for image in images:
-        path = 'media/article/'+str(count.ArticleNum)+'_'+str(num)+'.jpg'
-        with open(path, 'wb') as f:
-            f.write(image.read())
-        num += 1
-        ArticleImage.append(host_name+path)
-
-    article.images = json.dumps(ArticleImage)
-    article.save()
-    return JsonResponse({'status': 'success'})
+        openid = request.GET.get('openid')
+        title = request.GET.get('title')
+        content = request.GET.get('content')
+        Article.objects.create(
+            openid=openid,
+            ArticleID=str(count.ArticleNum),
+            title=title,
+            content=content,
+            images=json.dumps(images),
+        )
+        count.ArticleNum += 1
+        count.save()
+        return JsonResponse({'ArticleID': str(count.ArticleNum-1)})
+    else:
+        ArticleID = request.POST.get('ArticleID')
+        article = Article.objects.get(ArticleID=ArticleID)
+        images = json.loads(article.images)
+        img_num = len(images)
+        #
+        image = request.FILES.get('image', None).read()
+        if image:
+            path = 'media/article/' + \
+                str(ArticleID)+'_'+str(img_num+1)+'.jpg'
+            with open(path, 'wb') as f:
+                f.write(image)
+            images.append(host_name+path)
+        article.images = json.dumps(images)
+        article.save()
+        return JsonResponse({'ArticleID': ArticleID})
 
 
 def PetSpaces(request):
@@ -210,6 +284,7 @@ def HotArticles(request):
             'like': article.like,
             'comment': article.comment,
             'read': article.read,
+            'share': article.share,
             'liked': article.ArticleID in likedArticles,
         })
     print(data)
@@ -220,8 +295,9 @@ def init(request):
     Count.objects.all().delete()
     Count.objects.create(
         CountID="1",
-        ArticleNum=0,
-        PetSpaceNum=0,
+        ArticleNum=1,
+        PetSpaceNum=1,
+        CommentNum=1,
     )
     count = Count.objects.get(CountID="1")
 
@@ -269,9 +345,11 @@ def init(request):
         time="2020-01-01",
         like=1,
         comment=2,
-        read=3
+        read=3,
+        share=4,
     )
     count.ArticleNum += 1
+    count.CommentNum += 2
     Article.objects.create(
         openid="ob66w612B_fnXnoIqnIGPvfy6HxY",
         ArticleID=str(count.ArticleNum),
@@ -283,8 +361,31 @@ def init(request):
         time="2020-01-01",
         like=1,
         comment=2,
-        read=3
+        read=3,
+        share=4,
     )
     count.ArticleNum += 1
     count.save()
+
+    # 删除数据库中所有的Comment对象
+    Comment.objects.all().delete()
+    count = Count.objects.get(CountID="1")
+    Comment.objects.create(
+        openid="ob66w63IHeVqG35o6rtQWdUtx6-0",
+        ArticleID="1",
+        CommentID=str(count.CommentNum),
+        content="I am Fancy",
+        like=0,
+    )
+    count.CommentNum += 1
+    Comment.objects.create(
+        openid="ob66w67W7KbxFUShl2c3Q-Z4Pi5Y",
+        ArticleID="1",
+        CommentID=str(count.CommentNum),
+        content="I like Fancy",
+        like=0,
+    )
+    count.CommentNum += 1
+    count.save()
+
     return JsonResponse({'status': 'success'})

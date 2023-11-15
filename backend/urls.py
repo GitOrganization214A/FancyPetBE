@@ -31,4 +31,6 @@ urlpatterns = [
     path('api/v1/PetSpaces/', views.PetSpaces, name='PetSpaces'),
     path('api/v1/postArticle/', views.postArticle, name='postArticle'),
     path('api/v1/like/', views.like, name='like'),
+    path('api/v1/viewArticle/', views.viewArticle, name='viewArticle'),
+    path('api/v1/postComment/', views.postComment, name='postComment'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
