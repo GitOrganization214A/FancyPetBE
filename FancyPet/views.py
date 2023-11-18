@@ -2,11 +2,37 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from .models import User, Article, PetSpace, Count, Comment
 from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import ObjectDoesNotExist
 import requests
 import json
 import os
 
 host_name = 'http://43.143.139.4:8000/'
+
+
+def QRcode(request):
+    try:
+        # 请求获取 access_token
+        appid = "wx17396561c08eee6a"
+        secret = "1553b8c2bdf47f280ffeb61c989e0f50"
+        token_url = f"https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={appid}&secret={secret}"
+
+        response = requests.post(token_url)
+        data = response.json()
+        access_token = data.get('access_token')
+
+        curscene = request.GET.get('curscene')
+
+        wxacode_url = f"https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token={access_token}"
+
+        response = requests.post(wxacode_url, json={'scene': curscene})
+        with open('media/PetSpace/1_QRcode.jpg', 'wb') as f:
+            f.write(response.content)
+
+        return JsonResponse({'status': 'success'})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)})
 
 
 def postComment(request):
@@ -17,16 +43,17 @@ def postComment(request):
     if article:
         article.comment += 1
         article.save()
-        user = User.objects.get(openid=openid)
-        info = getUserInfo(openid)
-        data = {
-            'openid': openid,
-            'ArticleID': ArticleID,
-            'nickname': info['nickname'],
-            'avatar': info['avatar'],
-            'content': content,
-        }
-        return JsonResponse(data)
+
+        count = Count.objects.get(CountID="1")
+        Comment.objects.create(
+            openid=openid,
+            ArticleID=ArticleID,
+            CommentID=str(count.CommentNum),
+            content=content,
+        )
+        count.CommentNum += 1
+        count.save()
+        return JsonResponse({'status': 'success'})
     else:
         return JsonResponse({'status': 'No such article'})
 
@@ -53,6 +80,7 @@ def newPetSpace(request):
         year=year,
         month=month,
         gender=gender,
+        images=json.dumps([]),
     )
     count.PetSpaceNum += 1
     count.save()
@@ -63,12 +91,35 @@ def newPetSpace(request):
     return JsonResponse({'status': 'success'})
 
 
-def viewArticle(request):
-    ArticleID = request.GET.get('ArticleID')
-    openid = request.GET.get('openid')
-    article = Article.objects.get(ArticleID=ArticleID)
+def viewPetSpace(request):
+    try:
+        PetSpaceID = request.GET.get('PetSpaceID')
+        petSpace = PetSpace.objects.get(PetSpaceID=PetSpaceID)
 
-    if article:
+        data = {
+            'name': petSpace.name,
+            'avatar': petSpace.avatar,
+            'breed': petSpace.breed,
+            'year': petSpace.year,
+            'month': petSpace.month,
+            'gender': petSpace.gender,
+            'images': json.loads(petSpace.images),
+        }
+        return JsonResponse(data)
+
+    except ObjectDoesNotExist:
+        return JsonResponse({'status': 'No such PetSpace'})
+
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def viewArticle(request):
+    try:
+        ArticleID = request.GET.get('ArticleID')
+        openid = request.GET.get('openid')
+        article = Article.objects.get(ArticleID=ArticleID)
+
         article.read += 1
         article.save()
 
@@ -107,11 +158,15 @@ def viewArticle(request):
             'read': article.read,
             'share': article.share,
             'liked': article.ArticleID in likedArticles,
+            'self': article.openid == openid,
             'comments': comments,
         }
         return JsonResponse(data)
-    else:
+
+    except ObjectDoesNotExist:
         return JsonResponse({'status': 'No such article'})
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
 def like(request):
@@ -164,13 +219,16 @@ def postArticle(request):
         article = Article.objects.get(ArticleID=ArticleID)
         images = json.loads(article.images)
         img_num = len(images)
-        #
-        image = request.FILES.get('image', None).read()
+        # 获取文件后缀名
+        image = request.FILES.get('image', None)
         if image:
+            file = image.read()
+            ext = os.path.splitext(image.name)[1]
+            print(ext)
             path = 'media/article/' + \
-                str(ArticleID)+'_'+str(img_num+1)+'.jpg'
+                str(ArticleID)+'_'+str(img_num+1)+ext
             with open(path, 'wb') as f:
-                f.write(image)
+                f.write(file)
             images.append(host_name+path)
         article.images = json.dumps(images)
         article.save()
@@ -199,7 +257,8 @@ def PetSpaces(request):
 
 @csrf_exempt
 def changeAvatar(request):
-    print(request)
+    print(request.POST)
+    print(request.FILES)
     files = request.FILES
     content = files.get('avatar', None).read()
     openid = request.POST.get('openid')
@@ -209,7 +268,7 @@ def changeAvatar(request):
     user = User.objects.filter(openid=openid)
     if user:
         user = user[0]
-        user.avatar = host_name+'media/user/'+openid+'.png'
+        user.avatar = host_name+'media/user/'+openid+'.jpg'
         user.save()
     return JsonResponse({'status': 'success'})
 
@@ -340,6 +399,7 @@ def init(request):
         name="溪小明儿",
         breed="英吉利斗牛犬",
         avatar=host_name+'media/user/logo.png',
+        images=json.dumps([]),
     )
     count.PetSpaceNum += 1
     PetSpace.objects.create(
@@ -348,6 +408,7 @@ def init(request):
         name="fancy",
         breed="英短",
         avatar=host_name+'media/user/logo.png',
+        images=json.dumps([]),
     )
     print(count.PetSpaceNum)
     count.PetSpaceNum += 1
@@ -361,8 +422,8 @@ def init(request):
     Article.objects.create(
         openid="ob66w612B_fnXnoIqnIGPvfy6HxY",
         ArticleID=str(count.ArticleNum),
-        title="标题",
-        content="内容",
+        title="家人们谁懂啊",
+        content="今天遇到九只好可爱的猫猫，一整个爱住了",
         images=json.dumps([
             'http://43.143.139.4:8000/media/article/background.jpg',
             'http://43.143.139.4:8000/media/article/background.jpg',
@@ -385,8 +446,8 @@ def init(request):
     Article.objects.create(
         openid="ob66w612B_fnXnoIqnIGPvfy6HxY",
         ArticleID=str(count.ArticleNum),
-        title="标题2",
-        content="内容2",
+        title="家人们我懂我懂",
+        content="像你这样的小猫咪，生来就是要被妈妈吃掉的",
         images=json.dumps([
             'http://43.143.139.4:8000/media/article/background.jpg',
         ]),
@@ -406,7 +467,7 @@ def init(request):
         openid="ob66w63IHeVqG35o6rtQWdUtx6-0",
         ArticleID="1",
         CommentID=str(count.CommentNum),
-        content="I am Fancy",
+        content="羡慕猫猫",
         like=0,
     )
     count.CommentNum += 1
@@ -414,7 +475,7 @@ def init(request):
         openid="ob66w67W7KbxFUShl2c3Q-Z4Pi5Y",
         ArticleID="1",
         CommentID=str(count.CommentNum),
-        content="I like Fancy",
+        content="一直都想养可爱的小猫猫",
         like=0,
     )
     count.CommentNum += 1
