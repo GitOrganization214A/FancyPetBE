@@ -15,6 +15,10 @@ class User(models.Model):
         blank=True,
         null=True
     )
+    likedComments = models.JSONField(
+        blank=True,
+        null=True
+    )
 
 
 class Article(models.Model):
@@ -57,8 +61,18 @@ class Comment(models.Model):
     like = models.IntegerField(default=0)
 
 
+class Activity(models.Model):
+    openid = models.CharField(max_length=255)
+    type = models.CharField(max_length=255)
+    ActivityID = models.CharField(max_length=255, default='0')
+    PetSpaceID = models.CharField(max_length=255, default='0')
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+
+
 class Count(models.Model):
     CountID = models.CharField(max_length=255)
     ArticleNum = models.IntegerField(default=1)
     PetSpaceNum = models.IntegerField(default=1)
     CommentNum = models.IntegerField(default=1)
+    ActivityNum = models.IntegerField(default=1)
