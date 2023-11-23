@@ -1,2 +1,2 @@
-#忽略media文件夹
 /media/*
+/nohup.out

@@ -25,6 +25,9 @@ def deleteComment(request):
     try:
         CommentID = request.GET.get('CommentID')
         comment = Comment.objects.get(CommentID=CommentID)
+        article = Article.objects.get(ArticleID=comment.ArticleID)
+        article.comment -= 1
+        article.save()
         comment.delete()
         return JsonResponse({'status': 'success'})
     except Exception as e:
@@ -258,3 +261,34 @@ def HotArticles(request):
         })
     print(data)
     return JsonResponse(data, safe=False)
+
+
+def viewUserInfo(request):
+    try:
+        openid = request.GET.get('openid')
+        user = User.objects.get(openid=openid)
+        articles = Article.objects.filter(openid=openid)
+        # 将每个Article对象转换成字典
+        articles = [{
+            'ArticleID': article.ArticleID,
+            'title': article.title,
+            'content': article.content,
+            'images': json.loads(article.images),
+            'time': article.time.strftime("%Y-%m-%d %H:%M:%S"),
+            'like': article.like,
+            'comment': article.comment,
+            'read': article.read,
+            'share': article.share,
+        } for article in articles]
+        data = {
+            'openid': user.openid,
+            'nickname': user.nickname,
+            'avatar': user.avatar,
+            'follow': user.follow,
+            'atcnum': user.atcnum,
+            'fans': user.fans,
+            'articles': articles,
+        }
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
