@@ -26,6 +26,7 @@ def getPetInfo(PetSpaceID):
 
 def adoptPet(request):
     try:
+        openid = request.GET.get('openid')
         activities = Activity.objects.filter(type="adopt")
         data = []
         for activity in activities:
@@ -37,8 +38,10 @@ def adoptPet(request):
                 'nickname': info['nickname'],
                 'avatar': info['avatar'],
                 'content': activity.content,
+                'self': activity.openid == openid,
                 'pet': getPetInfo(activity.PetSpaceID),
             })
+        print(data)
         return JsonResponse(data, safe=False)
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -58,6 +61,82 @@ def postAdopt(request):
             content=content,
             type="adopt",
         )
+        count.ActivityNum += 1
+        count.save()
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def applyAdopt(request):
+    try:
+        # openid = request.GET.get('openid')
+        ActivityID = request.GET.get('ActivityID')
+        activity = Activity.objects.get(ActivityID=ActivityID)
+        return JsonResponse({'status': 'success', 'openid': activity.openid})
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def lovePet(request):
+    try:
+        openid = request.GET.get('openid')
+        activities = Activity.objects.filter(type="love")
+        data = []
+        for activity in activities:
+            info = getUserInfo(activity.openid)
+            data.append({
+                'openid': activity.openid,
+                'ActivityID': activity.ActivityID,
+                'PetSpaceID': activity.PetSpaceID,
+                'nickname': info['nickname'],
+                'avatar': info['avatar'],
+                'content': activity.content,
+                'self': activity.openid == openid,
+                'pet': getPetInfo(activity.PetSpaceID),
+            })
+        print(data)
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def postLove(request):
+    try:
+        openid = request.GET.get('openid')
+        PetSpaceID = request.GET.get('PetSpaceID')
+        content = request.GET.get('content')
+        count = Count.objects.get(CountID="1")
+        Activity.objects.create(
+            openid=openid,
+            ActivityID=str(count.ActivityNum),
+            PetSpaceID=PetSpaceID,
+            title='',
+            content=content,
+            type="love",
+        )
+        count.ActivityNum += 1
+        count.save()
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def applyLove(request):
+    try:
+        # openid = request.GET.get('openid')
+        ActivityID = request.GET.get('ActivityID')
+        activity = Activity.objects.get(ActivityID=ActivityID)
+        return JsonResponse({'status': 'success', 'openid': activity.openid})
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def deleteActivity(request):
+    try:
+        ActivityID = request.GET.get('ActivityID')
+        activity = Activity.objects.get(ActivityID=ActivityID)
+        activity.delete()
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})

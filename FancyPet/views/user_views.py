@@ -138,25 +138,25 @@ def init(request):
     PetSpace.objects.all().delete()
 
     Activity.objects.all().delete()
-    Activity.objects.create(
-        openid="ob66w612B_fnXnoIqnIGPvfy6HxY",
-        type="adopt",
-        ActivityID=str(count.ActivityNum),
-        PetSpaceID="1",
-        title="求好心人领养一只猫猫",
-        content="1111111111111111111111",
-    )
-    count.ActivityNum += 1
-    Activity.objects.create(
-        openid="ob66w612B_fnXnoIqnIGPfvy6HxY",
-        type="adopt",
-        ActivityID=str(count.ActivityNum),
-        PetSpaceID="2",
-        title="求好心人领养一只狗狗",
-        content="2222222222222222222222222",
-    )
-    count.ActivityNum += 1
-    count.save()
+    # Activity.objects.create(
+    #     openid="ob66w612B_fnXnoIqnIGPvfy6HxY",
+    #     type="adopt",
+    #     ActivityID=str(count.ActivityNum),
+    #     PetSpaceID="1",
+    #     title="求好心人领养一只猫猫",
+    #     content="1111111111111111111111",
+    # )
+    # count.ActivityNum += 1
+    # Activity.objects.create(
+    #     openid="ob66w612B_fnXnoIqnIGPfvy6HxY",
+    #     type="adopt",
+    #     ActivityID=str(count.ActivityNum),
+    #     PetSpaceID="2",
+    #     title="求好心人领养一只狗狗",
+    #     content="2222222222222222222222222",
+    # )
+    # count.ActivityNum += 1
+    # count.save()
 
     # 删除数据库中所有的Article对象
     Article.objects.all().delete()
