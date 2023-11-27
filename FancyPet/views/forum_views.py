@@ -210,6 +210,9 @@ def postArticle(request):
         )
         count.ArticleNum += 1
         count.save()
+        user = User.objects.get(openid=openid)
+        user.atcnum += 1
+        user.save()
         return JsonResponse({'ArticleID': str(count.ArticleNum-1)})
     else:
         ArticleID = request.POST.get('ArticleID')

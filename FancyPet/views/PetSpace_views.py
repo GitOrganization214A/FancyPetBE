@@ -86,3 +86,16 @@ def PetSpaces(request):
         })
     print(data)
     return JsonResponse(data, safe=False)
+
+
+def deletePetSpace(request):
+    try:
+        PetSpaceID = request.GET.get('PetSpaceID')
+        PetSpace.objects.get(PetSpaceID=PetSpaceID).delete()
+        return JsonResponse({'status': 'success'})
+
+    except ObjectDoesNotExist:
+        return JsonResponse({'status': 'No such PetSpace'})
+
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
