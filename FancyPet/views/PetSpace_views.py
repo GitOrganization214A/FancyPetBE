@@ -99,3 +99,52 @@ def deletePetSpace(request):
 
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+@csrf_exempt
+def newPhoto(request):
+    try:
+        PetSpaceID = request.POST.get('PetSpaceID')
+        image = request.FILES.get('image', None).read()
+
+        petSpace = PetSpace.objects.get(PetSpaceID=PetSpaceID)
+        images = json.loads(petSpace.images)
+
+        petSpace.imageNum += 1
+        path = 'media/PetSpace/' + \
+            PetSpaceID+'_'+str(petSpace)+'.jpg'
+        images.append(host_name+path)
+        petSpace.images = json.dumps(images)
+        petSpace.save()
+
+        with open(path, 'wb') as f:
+            f.write(image)
+
+        return JsonResponse({'status': 'success'})
+
+    except ObjectDoesNotExist:
+        return JsonResponse({'status': 'No such PetSpace'})
+
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def deletePhoto(request):
+    try:
+        PetSpaceID = request.GET.get('PetSpaceID')
+        index = request.GET.get('index')
+
+        petSpace = PetSpace.objects.get(PetSpaceID=PetSpaceID)
+        images = json.loads(petSpace.images)
+        image = images.pop(int(index)-1)
+        petSpace.images = json.dumps(images)
+        petSpace.save()
+
+        # 删除image的前25个字符，即host_name
+        image = image[25:]
+        os.remove(image)
+
+        return JsonResponse({'status': 'success'})
+
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})

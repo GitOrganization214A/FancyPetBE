@@ -46,6 +46,7 @@ class PetSpace(models.Model):
     year = models.CharField(max_length=255, default='')
     month = models.CharField(max_length=255, default='')
     gender = models.CharField(max_length=255, default='')
+    imageNum = models.IntegerField(default=0)
     images = models.JSONField(
         blank=True,
         null=True
@@ -68,6 +69,9 @@ class Activity(models.Model):
     PetSpaceID = models.CharField(max_length=255, default='0')
     title = models.CharField(max_length=255)
     content = models.TextField()
+    time = models.CharField(max_length=255, default='')
+    address = models.CharField(max_length=255, default='')
+    img = models.CharField(max_length=255, default='')
 
 
 class Count(models.Model):

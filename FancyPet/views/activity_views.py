@@ -132,6 +132,65 @@ def applyLove(request):
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
+@csrf_exempt
+def postParty(request):
+    print(request.POST)
+    print(request.FILES)
+    try:
+        openid = request.POST.get('openid')
+        content = request.POST.get('content')
+        time = request.POST.get('date')
+        address = request.POST.get('address')
+        title = request.POST.get('title')
+        image = request.FILES.get('image').read()
+        count = Count.objects.get(CountID="1")
+        path = 'media/activity/'+str(count.ActivityNum)+'.jpg'
+        with open(path, 'wb') as f:
+            f.write(image)
+        Activity.objects.create(
+            openid=openid,
+            ActivityID=str(count.ActivityNum),
+            PetSpaceID="0",
+            title=title,
+            content=content,
+            type="party",
+            time=time,
+            address=address,
+            img=host_name+path,
+        )
+        count.ActivityNum += 1
+        count.save()
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        print(e)
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def partyPet(request):
+    try:
+        openid = request.GET.get('openid')
+        activities = Activity.objects.filter(type="party")
+        data = []
+        for activity in activities:
+            info = getUserInfo(activity.openid)
+            data.append({
+                'openid': activity.openid,
+                'ActivityID': activity.ActivityID,
+                'nickname': info['nickname'],
+                'avatar': info['avatar'],
+                'time': activity.time,
+                'address': activity.address,
+                'title': activity.title,
+                'content': activity.content,
+                'img': activity.img,
+                'self': activity.openid == openid,
+            })
+        print(data)
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
 def deleteActivity(request):
     try:
         ActivityID = request.GET.get('ActivityID')
