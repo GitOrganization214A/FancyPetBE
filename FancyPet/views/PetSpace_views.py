@@ -105,20 +105,22 @@ def deletePetSpace(request):
 def newPhoto(request):
     try:
         PetSpaceID = request.POST.get('PetSpaceID')
-        image = request.FILES.get('image', None).read()
+        image = request.FILES.get('image', None)
+        file = image.read()
 
         petSpace = PetSpace.objects.get(PetSpaceID=PetSpaceID)
         images = json.loads(petSpace.images)
 
         petSpace.imageNum += 1
+        ext = os.path.splitext(image.name)[1]
         path = 'media/PetSpace/' + \
-            PetSpaceID+'_'+str(petSpace)+'.jpg'
+            PetSpaceID+'_'+str(petSpace.imageNum)+ext
         images.append(host_name+path)
         petSpace.images = json.dumps(images)
         petSpace.save()
 
         with open(path, 'wb') as f:
-            f.write(image)
+            f.write(file)
 
         return JsonResponse({'status': 'success'})
 

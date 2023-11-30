@@ -111,6 +111,7 @@ def viewArticle(request):
                 'content': comment.content,
                 'time': comment.time.strftime("%Y-%m-%d %H:%M:%S"),
                 'like': comment.like,
+                'liked': comment.CommentID in json.loads(user.likedComments) if user.likedComments else [],
                 'self': comment.openid == openid,
             })
 
@@ -219,12 +220,11 @@ def postArticle(request):
         article = Article.objects.get(ArticleID=ArticleID)
         images = json.loads(article.images)
         img_num = len(images)
-        # 获取文件后缀名
+
         image = request.FILES.get('image', None)
         if image:
             file = image.read()
             ext = os.path.splitext(image.name)[1]
-            print(ext)
             path = 'media/article/' + \
                 str(ArticleID)+'_'+str(img_num+1)+ext
             with open(path, 'wb') as f:
