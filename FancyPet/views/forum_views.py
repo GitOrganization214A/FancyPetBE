@@ -101,13 +101,13 @@ def viewArticle(request):
         comments = []
         commentList = Comment.objects.filter(ArticleID=ArticleID)
         for comment in commentList:
-            info = getUserInfo(comment.openid)
+            user = User.objects.get(openid=comment.openid)
             comments.append({
-                'openid': comment.openid,
+                'UserID': user.UserID,
                 'ArticleID': comment.ArticleID,
                 'CommentID': comment.CommentID,
-                'nickname': info['nickname'],
-                'avatar': info['avatar'],
+                'nickname': user.nickname,
+                'avatar': user.avatar,
                 'content': comment.content,
                 'time': comment.time.strftime("%Y-%m-%d %H:%M:%S"),
                 'like': comment.like,
@@ -115,12 +115,12 @@ def viewArticle(request):
                 'self': comment.openid == openid,
             })
 
-        info = getUserInfo(article.openid)
+        user = User.objects.get(openid=article.openid)
         data = {
-            'openid': article.openid,
+            'UserID': user.UserID,
             'ArticleID': article.ArticleID,
-            'nickname': info['nickname'],
-            'avatar': info['avatar'],
+            'nickname': user.nickname,
+            'avatar': user.avatar,
             'title': article.title,
             'content': article.content,
             'images': json.loads(article.images),
@@ -246,12 +246,12 @@ def HotArticles(request):
     data = []
     for article in articles:
         # 将每个Article对象转换成字典
-        info = getUserInfo(article.openid)
+        user = User.objects.get(openid=article.openid)
         data.append({
-            'openid': article.openid,
+            'UserID': user.UserID,
             'ArticleID': article.ArticleID,
-            'nickname': info['nickname'],
-            'avatar': info['avatar'],
+            'nickname': user.nickname,
+            'avatar': user.avatar,
             'title': article.title,
             'content': article.content,
             'images': json.loads(article.images),
@@ -268,9 +268,9 @@ def HotArticles(request):
 
 def viewUserInfo(request):
     try:
-        openid = request.GET.get('openid')
-        user = User.objects.get(openid=openid)
-        articles = Article.objects.filter(openid=openid)
+        UserID = request.GET.get('UserID')
+        user = User.objects.get(UserID=UserID)
+        articles = Article.objects.filter(openid=user.openid)
         # 将每个Article对象转换成字典
         articles = [{
             'ArticleID': article.ArticleID,
@@ -284,7 +284,7 @@ def viewUserInfo(request):
             'share': article.share,
         } for article in articles]
         data = {
-            'openid': user.openid,
+            'UserID': user.UserID,
             'nickname': user.nickname,
             'avatar': user.avatar,
             'follow': user.follow,
@@ -293,5 +293,27 @@ def viewUserInfo(request):
             'articles': articles,
         }
         return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def follow(request):
+    try:
+        fromID = request.GET.get('fromID')
+        toID = request.GET.get('toID')
+        operation = request.GET.get('operation')
+        user1 = User.objects.get(UserID=fromID)
+        user2 = User.objects.get(UserID=toID)
+        followUsers = json.loads(
+            user1.followUsers)
+        if operation == 'add':
+            user1.follow += 1
+            followUsers.append(user2.openid)
+        elif operation == 'cancel':
+            user1.follow -= 1
+            followUsers.remove(user2.openid)
+        user1.followUsers = json.dumps(followUsers)
+        user1.save()
+        return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})

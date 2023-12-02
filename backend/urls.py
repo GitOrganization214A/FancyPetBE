@@ -52,4 +52,5 @@ urlpatterns = [
     path('api/v1/postParty/', views.postParty, name='postParty'),
     path('api/v1/newPhoto/', views.newPhoto, name='newPhoto'),
     path('api/v1/deletePhoto/', views.deletePhoto, name='deletePhoto'),
+    path('api/v1/follow/', views.follow, name='follow'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

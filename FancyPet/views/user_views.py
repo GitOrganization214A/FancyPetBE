@@ -66,7 +66,7 @@ def login(request):
         user = user[0]
         data = {
             'openid': openid,
-            # 设置nickname为空
+            'UserID': user.UserID,
             'nickname': user.nickname,
             'avatar': user.avatar,
             'follow': user.follow,
@@ -74,11 +74,15 @@ def login(request):
             'fans': user.fans,
         }
     else:
+        count = Count.objects.get(CountID="1")
         user = User.objects.create(
-            openid=openid, nickname="nickname", avatar=host_name+'media/user/logo.png')
+            openid=openid, nickname="nickname", avatar=host_name+'media/user/logo.png', UserID=str(count.UserNum))
+        count.UserNum += 1
+        count.save()
         data = {
             'openid': openid,
-            'nickname': None,
+            'UserID': user.UserID,
+            'nickname': 'nickname',
             'avatar': host_name+'media/user/logo.png',
             'follow': 0,
             'atcnum': 0,
@@ -94,6 +98,7 @@ def userInfo(request):
         user = User.objects.get(openid=openid)
         data = {
             'openid': openid,
+            'UserID': user.UserID,
             'nickname': user.nickname,
             'avatar': user.avatar,
             'follow': user.follow,
@@ -125,104 +130,113 @@ def getUserInfo(openid):
 
 
 def init(request):
-    Count.objects.all().delete()
-    Count.objects.create(
-        CountID="1",
-        ArticleNum=1,
-        PetSpaceNum=1,
-        CommentNum=1,
-        ActivityNum=1,
-    )
     count = Count.objects.get(CountID="1")
-
-    PetSpace.objects.all().delete()
-
-    Activity.objects.all().delete()
-    # Activity.objects.create(
-    #     openid="ob66w612B_fnXnoIqnIGPvfy6HxY",
-    #     type="adopt",
-    #     ActivityID=str(count.ActivityNum),
-    #     PetSpaceID="1",
-    #     title="求好心人领养一只猫猫",
-    #     content="1111111111111111111111",
-    # )
-    # count.ActivityNum += 1
-    # Activity.objects.create(
-    #     openid="ob66w612B_fnXnoIqnIGPfvy6HxY",
-    #     type="adopt",
-    #     ActivityID=str(count.ActivityNum),
-    #     PetSpaceID="2",
-    #     title="求好心人领养一只狗狗",
-    #     content="2222222222222222222222222",
-    # )
-    # count.ActivityNum += 1
-    # count.save()
-
-    # 删除数据库中所有的Article对象
-    Article.objects.all().delete()
-
-    # 给数据库中添加一个Article对象
-    count = Count.objects.get(CountID="1")
-    Article.objects.create(
-        openid="ob66w612B_fnXnoIqnIGPvfy6HxY",
-        ArticleID=str(count.ArticleNum),
-        title="家人们谁懂啊",
-        content="今天遇到九只好可爱的猫猫，一整个爱住了",
-        images=json.dumps([
-            {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
-            {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
-            {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
-            {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
-            {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
-            {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
-            {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
-            {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
-            {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
-        ]),
-        time="2020-01-01",
-        like=1,
-        comment=2,
-        read=3,
-        share=4,
-    )
-    count.ArticleNum += 1
-
-    Article.objects.create(
-        openid="ob66w612B_fnXnoIqnIGPvfy6HxY",
-        ArticleID=str(count.ArticleNum),
-        title="家人们我懂我懂",
-        content="像你这样的小猫咪，生来就是要被妈妈吃掉的",
-        images=json.dumps([
-            {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
-        ]),
-        time="2020-01-01",
-        like=1,
-        comment=2,
-        read=3,
-        share=4,
-    )
-    count.ArticleNum += 1
+    for user in User.objects.all():
+        user.UserID = str(count.UserNum)
+        count.UserNum += 1
+        user.save()
     count.save()
-
-    # 删除数据库中所有的Comment对象
-    Comment.objects.all().delete()
-    count = Count.objects.get(CountID="1")
-    Comment.objects.create(
-        openid="ob66w63IHeVqG35o6rtQWdUtx6-0",
-        ArticleID="1",
-        CommentID=str(count.CommentNum),
-        content="羡慕猫猫",
-        like=0,
-    )
-    count.CommentNum += 1
-    Comment.objects.create(
-        openid="ob66w67W7KbxFUShl2c3Q-Z4Pi5Y",
-        ArticleID="1",
-        CommentID=str(count.CommentNum),
-        content="一直都想养可爱的小猫猫",
-        like=0,
-    )
-    count.CommentNum += 1
-    count.save()
-
     return JsonResponse({'status': 'success'})
+
+# def init(request):
+#     Count.objects.all().delete()
+#     Count.objects.create(
+#         CountID="1",
+#         ArticleNum=1,
+#         PetSpaceNum=1,
+#         CommentNum=1,
+#         ActivityNum=1,
+#     )
+#     count = Count.objects.get(CountID="1")
+
+#     PetSpace.objects.all().delete()
+
+#     Activity.objects.all().delete()
+#     # Activity.objects.create(
+#     #     openid="ob66w612B_fnXnoIqnIGPvfy6HxY",
+#     #     type="adopt",
+#     #     ActivityID=str(count.ActivityNum),
+#     #     PetSpaceID="1",
+#     #     title="求好心人领养一只猫猫",
+#     #     content="1111111111111111111111",
+#     # )
+#     # count.ActivityNum += 1
+#     # Activity.objects.create(
+#     #     openid="ob66w612B_fnXnoIqnIGPfvy6HxY",
+#     #     type="adopt",
+#     #     ActivityID=str(count.ActivityNum),
+#     #     PetSpaceID="2",
+#     #     title="求好心人领养一只狗狗",
+#     #     content="2222222222222222222222222",
+#     # )
+#     # count.ActivityNum += 1
+#     # count.save()
+
+#     # 删除数据库中所有的Article对象
+#     Article.objects.all().delete()
+
+#     # 给数据库中添加一个Article对象
+#     count = Count.objects.get(CountID="1")
+#     Article.objects.create(
+#         openid="ob66w612B_fnXnoIqnIGPvfy6HxY",
+#         ArticleID=str(count.ArticleNum),
+#         title="家人们谁懂啊",
+#         content="今天遇到九只好可爱的猫猫，一整个爱住了",
+#         images=json.dumps([
+#             {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
+#             {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
+#             {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
+#             {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
+#             {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
+#             {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
+#             {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
+#             {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
+#             {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
+#         ]),
+#         time="2020-01-01",
+#         like=1,
+#         comment=2,
+#         read=3,
+#         share=4,
+#     )
+#     count.ArticleNum += 1
+
+#     Article.objects.create(
+#         openid="ob66w612B_fnXnoIqnIGPvfy6HxY",
+#         ArticleID=str(count.ArticleNum),
+#         title="家人们我懂我懂",
+#         content="像你这样的小猫咪，生来就是要被妈妈吃掉的",
+#         images=json.dumps([
+#             {'url': 'http://43.143.139.4:8000/media/article/background.jpg'},
+#         ]),
+#         time="2020-01-01",
+#         like=1,
+#         comment=2,
+#         read=3,
+#         share=4,
+#     )
+#     count.ArticleNum += 1
+#     count.save()
+
+#     # 删除数据库中所有的Comment对象
+#     Comment.objects.all().delete()
+#     count = Count.objects.get(CountID="1")
+#     Comment.objects.create(
+#         openid="ob66w63IHeVqG35o6rtQWdUtx6-0",
+#         ArticleID="1",
+#         CommentID=str(count.CommentNum),
+#         content="羡慕猫猫",
+#         like=0,
+#     )
+#     count.CommentNum += 1
+#     Comment.objects.create(
+#         openid="ob66w67W7KbxFUShl2c3Q-Z4Pi5Y",
+#         ArticleID="1",
+#         CommentID=str(count.CommentNum),
+#         content="一直都想养可爱的小猫猫",
+#         like=0,
+#     )
+#     count.CommentNum += 1
+#     count.save()
+
+#     return JsonResponse({'status': 'success'})

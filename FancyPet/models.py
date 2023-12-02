@@ -1,11 +1,13 @@
 from django.db import models
 from django.utils import timezone
+import json
 import pytz
 # Create your models here.
 
 
 class User(models.Model):
     openid = models.CharField(max_length=255)
+    UserID = models.CharField(max_length=255, default='0')
     nickname = models.CharField(max_length=255)
     avatar = models.CharField(max_length=255)
     follow = models.IntegerField(default=0)
@@ -18,6 +20,11 @@ class User(models.Model):
     likedComments = models.JSONField(
         blank=True,
         null=True
+    )
+    followUsers = models.JSONField(
+        blank=True,
+        null=True,
+        default=list
     )
 
 
@@ -76,6 +83,7 @@ class Activity(models.Model):
 
 class Count(models.Model):
     CountID = models.CharField(max_length=255)
+    UserNum = models.IntegerField(default=1)
     ArticleNum = models.IntegerField(default=1)
     PetSpaceNum = models.IntegerField(default=1)
     CommentNum = models.IntegerField(default=1)

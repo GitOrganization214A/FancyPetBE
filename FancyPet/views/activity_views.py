@@ -30,13 +30,13 @@ def adoptPet(request):
         activities = Activity.objects.filter(type="adopt")
         data = []
         for activity in activities:
-            info = getUserInfo(activity.openid)
+            user = User.objects.get(openid=activity.openid)
             data.append({
-                'openid': activity.openid,
+                'UserID': user.UserID,
                 'ActivityID': activity.ActivityID,
                 'PetSpaceID': activity.PetSpaceID,
-                'nickname': info['nickname'],
-                'avatar': info['avatar'],
+                'nickname': user.nickname,
+                'avatar': user.avatar,
                 'content': activity.content,
                 'self': activity.openid == openid,
                 'pet': getPetInfo(activity.PetSpaceID),
@@ -84,13 +84,13 @@ def lovePet(request):
         activities = Activity.objects.filter(type="love")
         data = []
         for activity in activities:
-            info = getUserInfo(activity.openid)
+            user = User.objects.get(openid=activity.openid)
             data.append({
-                'openid': activity.openid,
+                'UserID': user.UserID,
                 'ActivityID': activity.ActivityID,
                 'PetSpaceID': activity.PetSpaceID,
-                'nickname': info['nickname'],
-                'avatar': info['avatar'],
+                'nickname': user.nickname,
+                'avatar': user.avatar,
                 'content': activity.content,
                 'self': activity.openid == openid,
                 'pet': getPetInfo(activity.PetSpaceID),
@@ -172,12 +172,12 @@ def partyPet(request):
         activities = Activity.objects.filter(type="party")
         data = []
         for activity in activities:
-            info = getUserInfo(activity.openid)
+            user = User.objects.get(openid=activity.openid)
             data.append({
-                'openid': activity.openid,
+                'UserID': user.UserID,
                 'ActivityID': activity.ActivityID,
-                'nickname': info['nickname'],
-                'avatar': info['avatar'],
+                'nickname': user.nickname,
+                'avatar': user.avatar,
                 'time': activity.time,
                 'address': activity.address,
                 'title': activity.title,
