@@ -81,6 +81,18 @@ class Activity(models.Model):
     img = models.CharField(max_length=255, default='')
 
 
+class Message(models.Model):
+    openid = models.CharField(max_length=255)
+    wxid = models.CharField(max_length=255, default='')
+    UserID = models.CharField(max_length=255, default='0')
+    PetSpaceID = models.CharField(max_length=255, default='0')
+    title = models.CharField(max_length=255, default='')
+    MessageID = models.CharField(max_length=255, default='0')
+    type = models.CharField(max_length=255)
+    content = models.CharField(max_length=255)
+    time = models.DateTimeField(auto_now_add=True)
+
+
 class Count(models.Model):
     CountID = models.CharField(max_length=255)
     UserNum = models.IntegerField(default=1)
@@ -88,3 +100,4 @@ class Count(models.Model):
     PetSpaceNum = models.IntegerField(default=1)
     CommentNum = models.IntegerField(default=1)
     ActivityNum = models.IntegerField(default=1)
+    MessageNum = models.IntegerField(default=1)

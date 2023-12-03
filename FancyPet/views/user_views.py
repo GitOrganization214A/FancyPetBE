@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from FancyPet.models import User, Article, PetSpace, Count, Comment, Activity
+from FancyPet.models import User, Article, PetSpace, Count, Comment, Activity, Message
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
 import requests
@@ -107,6 +107,29 @@ def userInfo(request):
         }
         return JsonResponse(data)
     except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def showMessages(request):
+    try:
+        openid = request.GET.get('openid')
+        messages = Message.objects.filter(openid=openid)
+        data = []
+        for message in messages:
+            data.append({
+                'MessageID': message.MessageID,
+                'wxid': message.wxid,
+                'UserID': message.UserID,
+                'PetSpaceID': message.PetSpaceID,
+                'title': message.title,
+                'content': message.content,
+                'time': message.time.strftime("%Y-%m-%d %H:%M:%S"),
+                'type': message.type,
+            })
+        print(data)
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 

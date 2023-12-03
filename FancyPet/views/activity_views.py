@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from FancyPet.models import User, Article, PetSpace, Count, Comment, Activity
+from FancyPet.models import User, Article, PetSpace, Count, Comment, Activity, Message
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
 from .user_views import getUserInfo
@@ -70,10 +70,32 @@ def postAdopt(request):
 
 def applyAdopt(request):
     try:
-        # openid = request.GET.get('openid')
+        openid = request.GET.get('openid')
+        content = request.GET.get('content')
         ActivityID = request.GET.get('ActivityID')
+        wxid = request.GET.get('wxid')
+
         activity = Activity.objects.get(ActivityID=ActivityID)
-        return JsonResponse({'status': 'success', 'openid': activity.openid})
+        petSpace = PetSpace.objects.get(PetSpaceID=activity.PetSpaceID)
+        name = petSpace.name
+        user = User.objects.get(openid=openid)
+        nickname = user.nickname
+        title = '用户 '+nickname + ' 申请领养您的宠物 ' + name
+
+        count = Count.objects.get(CountID="1")
+        Message.objects.create(
+            openid=activity.openid,
+            wxid='申请人微信号：'+wxid,
+            UserID=user.UserID,
+            PetSpaceID='0',
+            MessageID=str(count.MessageNum),
+            type="adopt",
+            title=title,
+            content='申请人留言：'+content,
+        )
+        count.MessageNum += 1
+        count.save()
+        return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
@@ -124,10 +146,37 @@ def postLove(request):
 
 def applyLove(request):
     try:
-        # openid = request.GET.get('openid')
+        openid = request.GET.get('openid')
+        wxid = request.GET.get('wxid')
+        content = request.GET.get('content')
         ActivityID = request.GET.get('ActivityID')
+        PetSpaceID = request.GET.get('PetSpaceID')
+
         activity = Activity.objects.get(ActivityID=ActivityID)
-        return JsonResponse({'status': 'success', 'openid': activity.openid})
+        petSpace1 = PetSpace.objects.get(PetSpaceID=activity.PetSpaceID)
+        name1 = petSpace1.name
+        petSpace2 = PetSpace.objects.get(PetSpaceID=PetSpaceID)
+        name2 = petSpace2.name
+
+        user = User.objects.get(openid=openid)
+        nickname = user.nickname
+
+        title = '用户 ' + nickname + ' 申请将其宠物 ' + name2 + ' 与您的宠物 ' + name1 + ' 配种'
+
+        count = Count.objects.get(CountID="1")
+        Message.objects.create(
+            openid=activity.openid,
+            wxid='申请人微信号：'+wxid,
+            UserID=user.UserID,
+            PetSpaceID=PetSpaceID,
+            MessageID=str(count.MessageNum),
+            type="love",
+            title=title,
+            content='申请人留言：'+content,
+        )
+        count.MessageNum += 1
+        count.save()
+        return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
@@ -187,6 +236,35 @@ def partyPet(request):
             })
         print(data)
         return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def applyParty(request):
+    try:
+        openid = request.GET.get('openid')
+        # content = request.GET.get('content')
+        ActivityID = request.GET.get('ActivityID')
+
+        activity = Activity.objects.get(ActivityID=ActivityID)
+        user = User.objects.get(openid=openid)
+        nickname = user.nickname
+        title = '用户 ' + nickname + ' 申请参加您的活动 ' + activity.title
+
+        count = Count.objects.get(CountID="1")
+        Message.objects.create(
+            openid=activity.openid,
+            wxid='',
+            UserID=user.UserID,
+            PetSpaceID='0',
+            MessageID=str(count.MessageNum),
+            type="party",
+            title=title,
+            content='',
+        )
+        count.MessageNum += 1
+        count.save()
+        return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
