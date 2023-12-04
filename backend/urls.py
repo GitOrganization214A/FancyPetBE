@@ -55,4 +55,5 @@ urlpatterns = [
     path('api/v1/deletePhoto/', views.deletePhoto, name='deletePhoto'),
     path('api/v1/follow/', views.follow, name='follow'),
     path('api/v1/showMessages/', views.showMessages, name='showMessages'),
+    path('api/v1/deleteMessage/', views.deleteMessage, name='deleteMessage'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

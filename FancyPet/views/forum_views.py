@@ -15,6 +15,9 @@ def deleteArticle(request):
     try:
         ArticleID = request.GET.get('ArticleID')
         article = Article.objects.get(ArticleID=ArticleID)
+        user = User.objects.get(openid=article.openid)
+        user.atcnum -= 1
+        user.save()
         article.delete()
         return JsonResponse({'status': 'success'})
     except Exception as e:
@@ -96,7 +99,9 @@ def viewArticle(request):
         user = User.objects.get(openid=openid)
         likedArticles = json.loads(
             user.likedArticles) if user.likedArticles else []
-
+        likedComments = json.loads(
+            user.likedComments) if user.likedComments else []
+        print(likedComments)
         # 找到帖子的评论
         comments = []
         commentList = Comment.objects.filter(ArticleID=ArticleID)
@@ -111,7 +116,7 @@ def viewArticle(request):
                 'content': comment.content,
                 'time': comment.time.strftime("%Y-%m-%d %H:%M:%S"),
                 'like': comment.like,
-                'liked': comment.CommentID in json.loads(user.likedComments) if user.likedComments else [],
+                'liked': comment.CommentID in likedComments,
                 'self': comment.openid == openid,
             })
 
@@ -268,6 +273,7 @@ def HotArticles(request):
 
 def viewUserInfo(request):
     try:
+        openid = request.GET.get('openid')
         UserID = request.GET.get('UserID')
         user = User.objects.get(UserID=UserID)
         articles = Article.objects.filter(openid=user.openid)
@@ -283,6 +289,10 @@ def viewUserInfo(request):
             'read': article.read,
             'share': article.share,
         } for article in articles]
+
+        me = User.objects.get(openid=openid)
+        followUsers = json.loads(
+            me.followUsers) if me.followUsers else []
         data = {
             'UserID': user.UserID,
             'nickname': user.nickname,
@@ -290,23 +300,26 @@ def viewUserInfo(request):
             'follow': user.follow,
             'atcnum': user.atcnum,
             'fans': user.fans,
+            'self': openid == user.openid,
+            'followed': user.UserID in followUsers,
             'articles': articles,
         }
         return JsonResponse(data, safe=False)
     except Exception as e:
+        print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
 def follow(request):
     try:
-        fromID = request.GET.get('fromID')
-        toID = request.GET.get('toID')
+        openid = request.GET.get('openid')
+        UserID = request.GET.get('UserID')
         operation = request.GET.get('operation')
-        user1 = User.objects.get(UserID=fromID)
-        user2 = User.objects.get(UserID=toID)
+        user1 = User.objects.get(openid=openid)
+        user2 = User.objects.get(UserID=UserID)
         followUsers = json.loads(
-            user1.followUsers)
-        if operation == 'add':
+            user1.followUsers) if user1.followUsers else []
+        if operation == 'follow':
             user1.follow += 1
             followUsers.append(user2.openid)
         elif operation == 'cancel':
@@ -316,4 +329,5 @@ def follow(request):
         user1.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
+        print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})

@@ -133,6 +133,20 @@ def showMessages(request):
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
+def deleteMessage(request):
+    try:
+        openid = request.GET.get('openid')
+        MessageID = request.GET.get('MessageID')
+        message = Message.objects.get(MessageID=MessageID)
+        if message.openid == openid:
+            message.delete()
+            return JsonResponse({'status': 'success'})
+        else:
+            return JsonResponse({'status': 'Error', 'message': '无权限'})
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
 def getUserInfo(openid):
     user = User.objects.filter(openid=openid)
     if user:
