@@ -30,6 +30,7 @@ class User(models.Model):
 
 class Article(models.Model):
     openid = models.CharField(max_length=255)
+    UserID = models.CharField(max_length=255, default='0')
     ArticleID = models.CharField(max_length=255, default='0')
     title = models.CharField(max_length=255)
     content = models.TextField()
@@ -85,7 +86,9 @@ class Message(models.Model):
     openid = models.CharField(max_length=255)
     wxid = models.CharField(max_length=255, default='')
     UserID = models.CharField(max_length=255, default='0')
-    PetSpaceID = models.CharField(max_length=255, default='0')
+    PetSpaceID1 = models.CharField(max_length=255, default='0')
+    PetSpaceID2 = models.CharField(max_length=255, default='0')
+    ActivityID = models.CharField(max_length=255, default='0')
     title = models.CharField(max_length=255, default='')
     MessageID = models.CharField(max_length=255, default='0')
     type = models.CharField(max_length=255)

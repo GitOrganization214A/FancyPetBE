@@ -122,7 +122,7 @@ def viewArticle(request):
 
         user = User.objects.get(openid=article.openid)
         data = {
-            'UserID': user.UserID,
+            'UserID': article.UserID,
             'ArticleID': article.ArticleID,
             'nickname': user.nickname,
             'avatar': user.avatar,
@@ -207,8 +207,10 @@ def postArticle(request):
         openid = request.GET.get('openid')
         title = request.GET.get('title')
         content = request.GET.get('content')
+        user = User.objects.get(openid=openid)
         Article.objects.create(
             openid=openid,
+            UserID=user.UserID,
             ArticleID=str(count.ArticleNum),
             title=title,
             content=content,
@@ -253,7 +255,7 @@ def HotArticles(request):
         # 将每个Article对象转换成字典
         user = User.objects.get(openid=article.openid)
         data.append({
-            'UserID': user.UserID,
+            'UserID': article.UserID,
             'ArticleID': article.ArticleID,
             'nickname': user.nickname,
             'avatar': user.avatar,
@@ -280,6 +282,7 @@ def viewUserInfo(request):
         # 将每个Article对象转换成字典
         articles = [{
             'ArticleID': article.ArticleID,
+            'UserID': article.UserID,
             'title': article.title,
             'content': article.content,
             'images': json.loads(article.images),
@@ -293,6 +296,7 @@ def viewUserInfo(request):
         me = User.objects.get(openid=openid)
         followUsers = json.loads(
             me.followUsers) if me.followUsers else []
+        print(followUsers)
         data = {
             'UserID': user.UserID,
             'nickname': user.nickname,
@@ -301,7 +305,7 @@ def viewUserInfo(request):
             'atcnum': user.atcnum,
             'fans': user.fans,
             'self': openid == user.openid,
-            'followed': user.UserID in followUsers,
+            'followed': UserID in followUsers,
             'articles': articles,
         }
         return JsonResponse(data, safe=False)
@@ -317,17 +321,52 @@ def follow(request):
         operation = request.GET.get('operation')
         user1 = User.objects.get(openid=openid)
         user2 = User.objects.get(UserID=UserID)
+
         followUsers = json.loads(
             user1.followUsers) if user1.followUsers else []
         if operation == 'follow':
             user1.follow += 1
-            followUsers.append(user2.openid)
+            user2.fans += 1
+            followUsers.append(UserID)
         elif operation == 'cancel':
             user1.follow -= 1
-            followUsers.remove(user2.openid)
+            user2.fans -= 1
+            followUsers.remove(UserID)
         user1.followUsers = json.dumps(followUsers)
         user1.save()
         return JsonResponse({'status': 'success'})
+    except Exception as e:
+        print(e)
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def followArticles(request):
+    try:
+        openid = request.GET.get('openid')
+        user = User.objects.get(openid=openid)
+        followUsers = json.loads(
+            user.followUsers) if user.followUsers else []
+        # 获取数据库中所有的Article对象
+        articles = Article.objects.filter(UserID__in=followUsers)
+        data = []
+        for article in articles:
+            # 将每个Article对象转换成字典
+            user = User.objects.get(openid=article.openid)
+            data.append({
+                'UserID': article.UserID,
+                'ArticleID': article.ArticleID,
+                'nickname': user.nickname,
+                'avatar': user.avatar,
+                'title': article.title,
+                'content': article.content,
+                'images': json.loads(article.images),
+                'time': article.time,
+                'like': article.like,
+                'comment': article.comment,
+                'read': article.read,
+                'share': article.share,
+            })
+        return JsonResponse(data, safe=False)
     except Exception as e:
         print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})

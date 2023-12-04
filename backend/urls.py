@@ -56,4 +56,5 @@ urlpatterns = [
     path('api/v1/follow/', views.follow, name='follow'),
     path('api/v1/showMessages/', views.showMessages, name='showMessages'),
     path('api/v1/deleteMessage/', views.deleteMessage, name='deleteMessage'),
+    path('api/v1/followArticles/', views.followArticles, name='followArticles'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

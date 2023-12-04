@@ -116,16 +116,48 @@ def showMessages(request):
         messages = Message.objects.filter(openid=openid)
         data = []
         for message in messages:
-            data.append({
-                'MessageID': message.MessageID,
-                'wxid': message.wxid,
-                'UserID': message.UserID,
-                'PetSpaceID': message.PetSpaceID,
-                'title': message.title,
-                'content': message.content,
-                'time': message.time.strftime("%Y-%m-%d %H:%M:%S"),
-                'type': message.type,
-            })
+            user = User.objects.get(UserID=message.UserID)
+            if message.type == "adopt":
+                pet = PetSpace.objects.get(PetSpaceID=message.PetSpaceID1)
+                data.append({
+                    'MessageID': message.MessageID,
+                    'wxid': message.wxid,
+                    'UserID': message.UserID,
+                    'nickname': user.nickname,
+                    'PetSpaceID': message.PetSpaceID1,
+                    'PetName': pet.name,
+                    'content': message.content,
+                    'time': message.time.strftime("%Y-%m-%d %H:%M:%S"),
+                    'type': message.type,
+                })
+            elif message.type == "love":
+                pet1 = PetSpace.objects.get(PetSpaceID=message.PetSpaceID1)
+                pet2 = PetSpace.objects.get(PetSpaceID=message.PetSpaceID2)
+                data.append({
+                    'MessageID': message.MessageID,
+                    'wxid': message.wxid,
+                    'UserID': message.UserID,
+                    'nickname': user.nickname,
+                    'PetSpaceID1': message.PetSpaceID1,
+                    'PetSpaceID2': message.PetSpaceID2,
+                    'PetName1': pet1.name,
+                    'PetName2': pet2.name,
+                    'content': message.content,
+                    'time': message.time.strftime("%Y-%m-%d %H:%M:%S"),
+                    'type': message.type,
+                })
+            elif message.type == "party":
+                activity = Activity.objects.get(ActivityID=message.ActivityID)
+                data.append({
+                    'MessageID': message.MessageID,
+                    'wxid': message.wxid,
+                    'UserID': message.UserID,
+                    'nickname': user.nickname,
+                    'ActivityID': message.ActivityID,
+                    'ActivityName': activity.title,
+                    'time': message.time.strftime("%Y-%m-%d %H:%M:%S"),
+                    'type': message.type,
+                })
         print(data)
         return JsonResponse(data, safe=False)
     except Exception as e:
@@ -167,12 +199,16 @@ def getUserInfo(openid):
 
 
 def init(request):
-    count = Count.objects.get(CountID="1")
-    for user in User.objects.all():
-        user.UserID = str(count.UserNum)
-        count.UserNum += 1
-        user.save()
-    count.save()
+    # count = Count.objects.get(CountID="1")
+    # for user in User.objects.all():
+    #     user.UserID = str(count.UserNum)
+    #     count.UserNum += 1
+    #     user.save()
+    # count.save()
+    for article in Article.objects.all():
+        user = User.objects.get(openid=article.openid)
+        article.UserID = user.UserID
+        article.save()
     return JsonResponse({'status': 'success'})
 
 # def init(request):

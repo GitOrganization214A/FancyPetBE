@@ -76,22 +76,18 @@ def applyAdopt(request):
         wxid = request.GET.get('wxid')
 
         activity = Activity.objects.get(ActivityID=ActivityID)
-        petSpace = PetSpace.objects.get(PetSpaceID=activity.PetSpaceID)
-        name = petSpace.name
         user = User.objects.get(openid=openid)
-        nickname = user.nickname
-        title = '用户 '+nickname + ' 申请领养您的宠物 ' + name
 
         count = Count.objects.get(CountID="1")
         Message.objects.create(
             openid=activity.openid,
-            wxid='申请人微信号：'+wxid,
+            wxid=wxid,
             UserID=user.UserID,
-            PetSpaceID='0',
+            PetSpaceID1=activity.PetSpaceID,
             MessageID=str(count.MessageNum),
             type="adopt",
-            title=title,
-            content='申请人留言：'+content,
+            title='',
+            content=content,
         )
         count.MessageNum += 1
         count.save()
@@ -153,26 +149,20 @@ def applyLove(request):
         PetSpaceID = request.GET.get('PetSpaceID')
 
         activity = Activity.objects.get(ActivityID=ActivityID)
-        petSpace1 = PetSpace.objects.get(PetSpaceID=activity.PetSpaceID)
-        name1 = petSpace1.name
-        petSpace2 = PetSpace.objects.get(PetSpaceID=PetSpaceID)
-        name2 = petSpace2.name
 
         user = User.objects.get(openid=openid)
-        nickname = user.nickname
-
-        title = '用户 ' + nickname + ' 申请将其宠物 ' + name2 + ' 与您的宠物 ' + name1 + ' 配种'
 
         count = Count.objects.get(CountID="1")
         Message.objects.create(
             openid=activity.openid,
-            wxid='申请人微信号：'+wxid,
+            wxid=wxid,
             UserID=user.UserID,
-            PetSpaceID=PetSpaceID,
+            PetSpaceID1=activity.PetSpaceID,
+            PetSpaceID2=PetSpaceID,
             MessageID=str(count.MessageNum),
             type="love",
-            title=title,
-            content='申请人留言：'+content,
+            title='',
+            content=content,
         )
         count.MessageNum += 1
         count.save()
@@ -248,18 +238,16 @@ def applyParty(request):
 
         activity = Activity.objects.get(ActivityID=ActivityID)
         user = User.objects.get(openid=openid)
-        nickname = user.nickname
-        title = '用户 ' + nickname + ' 申请参加您的活动 ' + activity.title
 
         count = Count.objects.get(CountID="1")
         Message.objects.create(
             openid=activity.openid,
             wxid='',
             UserID=user.UserID,
-            PetSpaceID='0',
             MessageID=str(count.MessageNum),
+            ActivityID=ActivityID,
             type="party",
-            title=title,
+            title='',
             content='',
         )
         count.MessageNum += 1
