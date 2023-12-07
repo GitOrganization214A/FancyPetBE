@@ -11,6 +11,30 @@ import os
 host_name = 'http://43.143.139.4:8000/'
 
 
+def getComments(openid, ArticleID):
+    user = User.objects.get(openid=openid)
+    likedComments = json.loads(
+        user.likedComments) if user.likedComments else []
+    # 找到帖子的评论
+    comments = []
+    commentList = Comment.objects.filter(ArticleID=ArticleID)
+    for comment in commentList:
+        user = User.objects.get(openid=comment.openid)
+        comments.append({
+            'UserID': user.UserID,
+            'ArticleID': comment.ArticleID,
+            'CommentID': comment.CommentID,
+            'nickname': user.nickname,
+            'avatar': user.avatar,
+            'content': comment.content,
+            'time': comment.time.strftime("%Y-%m-%d %H:%M:%S"),
+            'like': comment.like,
+            'liked': comment.CommentID in likedComments,
+            'self': comment.openid == openid,
+        })
+    return comments
+
+
 def deleteArticle(request):
     try:
         ArticleID = request.GET.get('ArticleID')
@@ -101,24 +125,6 @@ def viewArticle(request):
             user.likedArticles) if user.likedArticles else []
         likedComments = json.loads(
             user.likedComments) if user.likedComments else []
-        print(likedComments)
-        # 找到帖子的评论
-        comments = []
-        commentList = Comment.objects.filter(ArticleID=ArticleID)
-        for comment in commentList:
-            user = User.objects.get(openid=comment.openid)
-            comments.append({
-                'UserID': user.UserID,
-                'ArticleID': comment.ArticleID,
-                'CommentID': comment.CommentID,
-                'nickname': user.nickname,
-                'avatar': user.avatar,
-                'content': comment.content,
-                'time': comment.time.strftime("%Y-%m-%d %H:%M:%S"),
-                'like': comment.like,
-                'liked': comment.CommentID in likedComments,
-                'self': comment.openid == openid,
-            })
 
         user = User.objects.get(openid=article.openid)
         data = {
@@ -136,12 +142,35 @@ def viewArticle(request):
             'share': article.share,
             'liked': article.ArticleID in likedArticles,
             'self': article.openid == openid,
-            'comments': comments,
         }
         return JsonResponse(data)
 
     except ObjectDoesNotExist:
         return JsonResponse({'status': 'No such article'})
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def viewCommentsHot(request):
+    try:
+        openid = request.GET.get('openid')
+        ArticleID = request.GET.get('ArticleID')
+        comments = getComments(openid, ArticleID)
+        # comments 按点赞数排序
+        comments.sort(key=lambda x: x['like'], reverse=True)
+        return JsonResponse(comments, safe=False)
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def viewCommentsTime(request):
+    try:
+        openid = request.GET.get('openid')
+        ArticleID = request.GET.get('ArticleID')
+        comments = getComments(openid, ArticleID)
+        # comments 按时间排序
+        comments.sort(key=lambda x: x['time'], reverse=True)
+        return JsonResponse(comments, safe=False)
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
 

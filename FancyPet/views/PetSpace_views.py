@@ -138,7 +138,7 @@ def deletePhoto(request):
 
         petSpace = PetSpace.objects.get(PetSpaceID=PetSpaceID)
         images = json.loads(petSpace.images)
-        image = images.pop(int(index)-1)
+        image = images.pop(int(index))
         petSpace.images = json.dumps(images)
         petSpace.save()
 
