@@ -72,6 +72,7 @@ def login(request):
             'follow': user.follow,
             'atcnum': user.atcnum,
             'fans': user.fans,
+            'newMessage': user.newMessage,
         }
     else:
         count = Count.objects.get(CountID="1")
@@ -104,6 +105,7 @@ def userInfo(request):
             'follow': user.follow,
             'atcnum': user.atcnum,
             'fans': user.fans,
+            'newMessage': user.newMessage,
         }
         return JsonResponse(data)
     except Exception as e:
@@ -113,6 +115,10 @@ def userInfo(request):
 def showMessages(request):
     try:
         openid = request.GET.get('openid')
+        me = User.objects.get(openid=openid)
+        me.newMessage = 0
+        me.save()
+
         messages = Message.objects.filter(openid=openid)
         data = []
         for message in messages:
@@ -147,6 +153,7 @@ def showMessages(request):
                     'type': message.type,
                 })
             elif message.type == "party":
+                print(message.ActivityID)
                 activity = Activity.objects.get(ActivityID=message.ActivityID)
                 data.append({
                     'MessageID': message.MessageID,
@@ -174,7 +181,7 @@ def deleteMessage(request):
             message.delete()
             return JsonResponse({'status': 'success'})
         else:
-            return JsonResponse({'status': 'Error', 'message': '无权限'})
+            return JsonResponse({'status': 'Error', 'message': 'No permission'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
@@ -199,16 +206,7 @@ def getUserInfo(openid):
 
 
 def init(request):
-    # count = Count.objects.get(CountID="1")
-    # for user in User.objects.all():
-    #     user.UserID = str(count.UserNum)
-    #     count.UserNum += 1
-    #     user.save()
-    # count.save()
-    for article in Article.objects.all():
-        user = User.objects.get(openid=article.openid)
-        article.UserID = user.UserID
-        article.save()
+    Message.objects.all().delete()
     return JsonResponse({'status': 'success'})
 
 # def init(request):

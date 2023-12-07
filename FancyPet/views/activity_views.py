@@ -91,6 +91,9 @@ def applyAdopt(request):
         )
         count.MessageNum += 1
         count.save()
+        user2 = User.objects.get(openid=activity.openid)
+        user2.newMessage += 1
+        user2.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -166,6 +169,9 @@ def applyLove(request):
         )
         count.MessageNum += 1
         count.save()
+        user2 = User.objects.get(openid=activity.openid)
+        user2.newMessage += 1
+        user2.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -252,6 +258,9 @@ def applyParty(request):
         )
         count.MessageNum += 1
         count.save()
+        user2 = User.objects.get(openid=activity.openid)
+        user2.newMessage += 1
+        user2.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -262,6 +271,10 @@ def deleteActivity(request):
         ActivityID = request.GET.get('ActivityID')
         activity = Activity.objects.get(ActivityID=ActivityID)
         activity.delete()
+        massages = Message.objects.filter(ActivityID=ActivityID)
+        if massages:
+            for massage in massages:
+                massage.delete()
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})

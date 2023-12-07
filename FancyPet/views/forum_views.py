@@ -334,6 +334,7 @@ def follow(request):
             followUsers.remove(UserID)
         user1.followUsers = json.dumps(followUsers)
         user1.save()
+        user2.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
         print(e)

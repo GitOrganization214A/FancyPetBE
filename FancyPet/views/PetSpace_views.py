@@ -150,3 +150,45 @@ def deletePhoto(request):
 
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def addHealthRecord(request):
+    try:
+        openid = request.GET.get('openid')
+        PetSpaceID = request.GET.get('PetSpaceID')
+        date = request.GET.get('date')
+        content = request.GET.get('content')
+        type = request.GET.get('type')
+
+        petSpace = PetSpace.objects.get(PetSpaceID=PetSpaceID)
+        if petSpace.openid != openid:
+            return JsonResponse({'status': 'Error', 'message': 'No permission'})
+
+        healthRecord = json.loads(
+            petSpace.healthRecord) if petSpace.healthRecord else []
+        healthRecord.append({'date': date, 'content': content, 'type': type})
+        petSpace.healthRecord = json.dumps(healthRecord)
+        petSpace.save()
+
+        return JsonResponse({'status': 'success'})
+
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def showHealthRecord(request):
+    try:
+        openid = request.GET.get('openid')
+        PetSpaceID = request.GET.get('PetSpaceID')
+        petSpace = PetSpace.objects.get(PetSpaceID=PetSpaceID)
+        if petSpace.openid != openid:
+            return JsonResponse({'status': 'Error', 'message': 'No permission'})
+
+        healthRecord = json.loads(
+            petSpace.healthRecord) if petSpace.healthRecord else []
+        # 列表倒序
+        healthRecord.reverse()
+        return JsonResponse(healthRecord, safe=False)
+
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})

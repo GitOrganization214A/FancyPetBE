@@ -13,6 +13,7 @@ class User(models.Model):
     follow = models.IntegerField(default=0)
     atcnum = models.IntegerField(default=0)
     fans = models.IntegerField(default=0)
+    newMessage = models.IntegerField(default=0)
     likedArticles = models.JSONField(
         blank=True,
         null=True
@@ -59,6 +60,7 @@ class PetSpace(models.Model):
         blank=True,
         null=True
     )
+    healthRecord = models.JSONField(blank=True, null=True, default=list)
 
 
 class Comment(models.Model):
