@@ -63,4 +63,8 @@ urlpatterns = [
     path('api/v1/addHealthRecord/', views.addHealthRecord, name='addHealthRecord'),
     path('api/v1/showHealthRecord/',
          views.showHealthRecord, name='showHealthRecord'),
+    path('api/v1/searchArticlesHot/',
+         views.searchArticlesHot, name='searchArticlesHot'),
+    path('api/v1/searchArticlesTime/',
+         views.searchArticlesTime, name='searchArticlesTime'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

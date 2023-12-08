@@ -4,6 +4,7 @@ from FancyPet.models import User, Article, PetSpace, Count, Comment, Activity
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
 from .user_views import getUserInfo
+from django.db.models import Q
 import requests
 import json
 import os
@@ -33,6 +34,30 @@ def getComments(openid, ArticleID):
             'self': comment.openid == openid,
         })
     return comments
+
+
+def searchArticles(keyword):
+    articles = Article.objects.filter(
+        Q(title__contains=keyword) | Q(content__contains=keyword))
+    data = []
+    for article in articles:
+        # 将每个Article对象转换成字典
+        user = User.objects.get(openid=article.openid)
+        data.append({
+            'UserID': article.UserID,
+            'ArticleID': article.ArticleID,
+            'nickname': user.nickname,
+            'avatar': user.avatar,
+            'title': article.title,
+            'content': article.content,
+            'images': json.loads(article.images),
+            'time': article.time,
+            'like': article.like,
+            'comment': article.comment,
+            'read': article.read,
+            'share': article.share,
+        })
+    return data
 
 
 def deleteArticle(request):
@@ -397,6 +422,30 @@ def followArticles(request):
                 'share': article.share,
             })
         return JsonResponse(data, safe=False)
+    except Exception as e:
+        print(e)
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def searchArticlesHot(request):
+    try:
+        keyword = request.GET.get('keyword')
+        articles = searchArticles(keyword)
+        # articles 按点赞数排序
+        articles.sort(key=lambda x: x['like'], reverse=True)
+        return JsonResponse(articles, safe=False)
+    except Exception as e:
+        print(e)
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def searchArticlesTime(request):
+    try:
+        keyword = request.GET.get('keyword')
+        articles = searchArticles(keyword)
+        # articles 按时间排序
+        articles.sort(key=lambda x: x['time'], reverse=True)
+        return JsonResponse(articles, safe=False)
     except Exception as e:
         print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
