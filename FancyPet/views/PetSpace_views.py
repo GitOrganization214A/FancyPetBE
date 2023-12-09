@@ -115,7 +115,8 @@ def newPhoto(request):
         ext = os.path.splitext(image.name)[1]
         path = 'media/PetSpace/' + \
             PetSpaceID+'_'+str(petSpace.imageNum)+ext
-        images.append(host_name+path)
+        # 添加到列表的前面
+        images.insert(0, host_name+path)
         petSpace.images = json.dumps(images)
         petSpace.save()
 
@@ -166,7 +167,8 @@ def addHealthRecord(request):
 
         healthRecord = json.loads(
             petSpace.healthRecord) if petSpace.healthRecord else []
-        healthRecord.append({'date': date, 'content': content, 'type': type})
+        healthRecord.insert(
+            0, {'date': date, 'content': content, 'type': type})
         petSpace.healthRecord = json.dumps(healthRecord)
         petSpace.save()
 
@@ -186,9 +188,48 @@ def showHealthRecord(request):
 
         healthRecord = json.loads(
             petSpace.healthRecord) if petSpace.healthRecord else []
-        # 列表倒序
-        healthRecord.reverse()
+
         return JsonResponse(healthRecord, safe=False)
 
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def changePetInfo(request):
+    try:
+        openid = request.GET.get('openid')
+        PetSpaceID = request.GET.get('PetSpaceID')
+        name = request.GET.get('name')
+        breed = request.GET.get('breed')
+        year = request.GET.get('year')
+        month = request.GET.get('month')
+        gender = request.GET.get('gender')
+        pet = PetSpace.objects.get(PetSpaceID=PetSpaceID)
+        if pet.openid != openid:
+            return JsonResponse({'status': 'Error', 'message': 'No permission'})
+        pet.name = name
+        pet.breed = breed
+        pet.year = year
+        pet.month = month
+        pet.gender = gender
+        pet.save()
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+@csrf_exempt
+def changePetAvatar(request):
+    try:
+        openid = request.POST.get('openid')
+        PetSpaceID = request.POST.get('PetSpaceID')
+        avatar = request.FILES.get('avatar', None).read()
+        pet = PetSpace.objects.get(PetSpaceID=PetSpaceID)
+        if pet.openid != openid:
+            return JsonResponse({'status': 'Error', 'message': 'No permission'})
+        path = 'media/PetSpace/'+PetSpaceID+'.jpg'
+        with open(path, 'wb') as f:
+            f.write(avatar)
+        return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})

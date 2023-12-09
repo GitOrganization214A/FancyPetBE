@@ -67,4 +67,7 @@ urlpatterns = [
          views.searchArticlesHot, name='searchArticlesHot'),
     path('api/v1/searchArticlesTime/',
          views.searchArticlesTime, name='searchArticlesTime'),
+    path('api/v1/changePetInfo/', views.changePetInfo, name='changePetInfo'),
+    path('api/v1/changePetAvatar/', views.changePetAvatar, name='changePetAvatar'),
+    path('api/v1/petVideos/', views.petVideos, name='petVideos'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

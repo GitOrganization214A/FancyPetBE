@@ -115,23 +115,7 @@ def postComment(request):
         count.CommentNum += 1
         count.save()
 
-        # 找到帖子的评论
-        comments = []
-        commentList = Comment.objects.filter(ArticleID=ArticleID)
-        for comment in commentList:
-            info = getUserInfo(comment.openid)
-            comments.append({
-                'openid': comment.openid,
-                'ArticleID': comment.ArticleID,
-                'CommentID': comment.CommentID,
-                'nickname': info['nickname'],
-                'avatar': info['avatar'],
-                'content': comment.content,
-                'time': comment.time.strftime("%Y-%m-%d %H:%M:%S"),
-                'like': comment.like,
-                'self': comment.openid == openid,
-            })
-        return JsonResponse({'status': 'success', 'comments': comments})
+        return JsonResponse({'status': 'success'})
     else:
         return JsonResponse({'status': 'No such article'})
 
@@ -323,6 +307,7 @@ def HotArticles(request):
             'share': article.share,
             'liked': article.ArticleID in likedArticles,
         })
+    data.sort(key=lambda x: x['like'], reverse=True)
     print(data)
     return JsonResponse(data, safe=False)
 

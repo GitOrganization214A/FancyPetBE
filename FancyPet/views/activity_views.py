@@ -280,6 +280,38 @@ def deleteActivity(request):
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
+def petVideos(request):
+    try:
+        openid = request.GET.get('openid')
+        me = User.objects.get(openid=openid)
+        likedArticles = json.loads(
+            me.likedArticles) if me.likedArticles else []
+
+        data = []
+        for article in Article.objects.all():
+            images = json.loads(article.images) if article.images else []
+            for image in images:
+                if image['url'].endswith('.mp4'):
+                    user = User.objects.get(openid=article.openid)
+                    data.append({
+                        'ArticleID': article.ArticleID,
+                        'UserID': user.UserID,
+                        'nickname': user.nickname,
+                        'avatar': user.avatar,
+                        'title': article.title,
+                        'content': article.content,
+                        'video': image,
+                        'time': article.time,
+                        'like': article.like,
+                        'liked': article.ArticleID in likedArticles,
+                        'self': article.openid == openid,
+                    })
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        print(e)
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
 def QRcode(request):
     try:
         # 请求获取 access_token
