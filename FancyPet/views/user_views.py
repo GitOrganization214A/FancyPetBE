@@ -206,7 +206,12 @@ def getUserInfo(openid):
 
 
 def init(request):
-    Message.objects.all().delete()
+    for user in User.objects.all():
+        user.likedComments = json.dumps([])
+        user.save()
+    for comment in Comment.objects.all():
+        comment.like = 0
+        comment.save()
     return JsonResponse({'status': 'success'})
 
 # def init(request):

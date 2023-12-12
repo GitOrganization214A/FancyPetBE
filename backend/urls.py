@@ -70,4 +70,5 @@ urlpatterns = [
     path('api/v1/changePetInfo/', views.changePetInfo, name='changePetInfo'),
     path('api/v1/changePetAvatar/', views.changePetAvatar, name='changePetAvatar'),
     path('api/v1/petVideos/', views.petVideos, name='petVideos'),
+    path('api/v1/shareArticle/', views.shareArticle, name='shareArticle'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

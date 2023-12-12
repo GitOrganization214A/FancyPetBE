@@ -36,9 +36,12 @@ def getComments(openid, ArticleID):
     return comments
 
 
-def searchArticles(keyword):
+def searchArticles(openid, keyword):
     articles = Article.objects.filter(
         Q(title__contains=keyword) | Q(content__contains=keyword))
+    user = User.objects.get(openid=openid)
+    likedArticles = json.loads(
+        user.likedArticles) if user.likedArticles else []
     data = []
     for article in articles:
         # 将每个Article对象转换成字典
@@ -50,12 +53,15 @@ def searchArticles(keyword):
             'avatar': user.avatar,
             'title': article.title,
             'content': article.content,
+            'PetSpaceID': article.PetSpaceID,
             'images': json.loads(article.images),
             'time': article.time,
             'like': article.like,
             'comment': article.comment,
             'read': article.read,
             'share': article.share,
+            'liked': article.ArticleID in likedArticles,
+            'self': article.openid == openid,
         })
     return data
 
@@ -245,6 +251,7 @@ def postArticle(request):
         openid = request.GET.get('openid')
         title = request.GET.get('title')
         content = request.GET.get('content')
+        PetSpaceID = request.GET.get('PetSpaceID', 0)
         user = User.objects.get(openid=openid)
         Article.objects.create(
             openid=openid,
@@ -299,6 +306,7 @@ def HotArticles(request):
             'avatar': user.avatar,
             'title': article.title,
             'content': article.content,
+            'PetSpaceID': article.PetSpaceID,
             'images': json.loads(article.images),
             'time': article.time,
             'like': article.like,
@@ -318,6 +326,8 @@ def viewUserInfo(request):
         UserID = request.GET.get('UserID')
         user = User.objects.get(UserID=UserID)
         articles = Article.objects.filter(openid=user.openid)
+        likedArticles = json.loads(
+            user.likedArticles) if user.likedArticles else []
         # 将每个Article对象转换成字典
         articles = [{
             'ArticleID': article.ArticleID,
@@ -325,11 +335,14 @@ def viewUserInfo(request):
             'title': article.title,
             'content': article.content,
             'images': json.loads(article.images),
+            'PetSpaceID': article.PetSpaceID,
             'time': article.time.strftime("%Y-%m-%d %H:%M:%S"),
             'like': article.like,
             'comment': article.comment,
             'read': article.read,
             'share': article.share,
+            'liked': article.ArticleID in likedArticles,
+            'self': openid == article.openid,
         } for article in articles]
 
         me = User.objects.get(openid=openid)
@@ -386,6 +399,9 @@ def followArticles(request):
         user = User.objects.get(openid=openid)
         followUsers = json.loads(
             user.followUsers) if user.followUsers else []
+        likedArticles = json.loads(
+            user.likedArticles) if user.likedArticles else []
+
         # 获取数据库中所有的Article对象
         articles = Article.objects.filter(UserID__in=followUsers)
         data = []
@@ -399,12 +415,15 @@ def followArticles(request):
                 'avatar': user.avatar,
                 'title': article.title,
                 'content': article.content,
+                'PetSpaceID': article.PetSpaceID,
                 'images': json.loads(article.images),
                 'time': article.time,
                 'like': article.like,
                 'comment': article.comment,
                 'read': article.read,
                 'share': article.share,
+                'liked': article.ArticleID in likedArticles,
+                'self': False,
             })
         return JsonResponse(data, safe=False)
     except Exception as e:
@@ -414,11 +433,16 @@ def followArticles(request):
 
 def searchArticlesHot(request):
     try:
+        openid = request.GET.get('openid')
         keyword = request.GET.get('keyword')
-        articles = searchArticles(keyword)
+        articles = searchArticles(openid, keyword)
         # articles 按点赞数排序
         articles.sort(key=lambda x: x['like'], reverse=True)
-        return JsonResponse(articles, safe=False)
+        data = {
+            'num': len(articles),
+            'articles': articles,
+        }
+        return JsonResponse(data, safe=False)
     except Exception as e:
         print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -426,11 +450,28 @@ def searchArticlesHot(request):
 
 def searchArticlesTime(request):
     try:
+        openid = request.GET.get('openid')
         keyword = request.GET.get('keyword')
-        articles = searchArticles(keyword)
+        articles = searchArticles(openid, keyword)
         # articles 按时间排序
         articles.sort(key=lambda x: x['time'], reverse=True)
-        return JsonResponse(articles, safe=False)
+        data = {
+            'num': len(articles),
+            'articles': articles,
+        }
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        print(e)
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def shareArticle(request):
+    try:
+        ArticleID = request.GET.get('ArticleID')
+        article = Article.objects.get(ArticleID=ArticleID)
+        article.share += 1
+        article.save()
+        return JsonResponse({'status': 'success'})
     except Exception as e:
         print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})

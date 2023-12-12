@@ -33,6 +33,7 @@ class Article(models.Model):
     openid = models.CharField(max_length=255)
     UserID = models.CharField(max_length=255, default='0')
     ArticleID = models.CharField(max_length=255, default='0')
+    PetSpaceID = models.CharField(max_length=255, default='0')
     title = models.CharField(max_length=255)
     content = models.TextField()
     images = models.JSONField(
