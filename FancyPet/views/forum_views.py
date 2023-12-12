@@ -377,10 +377,14 @@ def follow(request):
         followUsers = json.loads(
             user1.followUsers) if user1.followUsers else []
         if operation == 'follow':
+            if UserID in followUsers:
+                return JsonResponse({'status': 'Error', 'message': 'Already followed'})
             user1.follow += 1
             user2.fans += 1
             followUsers.append(UserID)
         elif operation == 'cancel':
+            if UserID not in followUsers:
+                return JsonResponse({'status': 'Error', 'message': 'Not followed'})
             user1.follow -= 1
             user2.fans -= 1
             followUsers.remove(UserID)

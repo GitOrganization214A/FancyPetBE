@@ -205,13 +205,52 @@ def getUserInfo(openid):
     return data
 
 
+def myFollows(request):
+    try:
+        openid = request.GET.get('openid')
+        me = User.objects.get(openid=openid)
+        follows = json.loads(me.followUsers) if me.followUsers else []
+        data = []
+        for UserID in follows:
+            user = User.objects.get(UserID=UserID)
+            data.append({
+                'UserID': user.UserID,
+                'nickname': user.nickname,
+                'avatar': user.avatar,
+                'followed': True,
+            })
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def myFans(request):
+    try:
+        openid = request.GET.get('openid')
+        me = User.objects.get(openid=openid)
+        myFollows = json.loads(me.followUsers) if me.followUsers else []
+        UserID = me.UserID
+        data = []
+        for user in User.objects.all():
+            follows = json.loads(user.followUsers) if user.followUsers else []
+            if UserID in follows:
+                data.append({
+                    'UserID': user.UserID,
+                    'nickname': user.nickname,
+                    'avatar': user.avatar,
+                    'followed': user.UserID in myFollows,
+                })
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
 def init(request):
     for user in User.objects.all():
-        user.likedComments = json.dumps([])
+        user.followUsers = json.dumps([])
+        user.follow = 0
+        user.fans = 0
         user.save()
-    for comment in Comment.objects.all():
-        comment.like = 0
-        comment.save()
     return JsonResponse({'status': 'success'})
 
 # def init(request):
