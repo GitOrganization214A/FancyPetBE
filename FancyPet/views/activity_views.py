@@ -303,6 +303,8 @@ def petVideos(request):
                         'video': image,
                         'time': article.time,
                         'like': article.like,
+                        'comment': article.comment,
+                        'share': article.share,
                         'liked': article.ArticleID in likedArticles,
                         'self': article.openid == openid,
                     })

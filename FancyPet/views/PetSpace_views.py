@@ -195,6 +195,27 @@ def showHealthRecord(request):
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
+def deleteHealthRecord(request):
+    try:
+        openid = request.GET.get('openid')
+        PetSpaceID = request.GET.get('PetSpaceID')
+        index = request.GET.get('index')
+        petSpace = PetSpace.objects.get(PetSpaceID=PetSpaceID)
+        if petSpace.openid != openid:
+            return JsonResponse({'status': 'Error', 'message': 'No permission'})
+
+        healthRecord = json.loads(
+            petSpace.healthRecord) if petSpace.healthRecord else []
+        healthRecord.pop(int(index))
+        petSpace.healthRecord = json.dumps(healthRecord)
+        petSpace.save()
+
+        return JsonResponse({'status': 'success'})
+
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
 def changePetInfo(request):
     try:
         openid = request.GET.get('openid')
@@ -230,6 +251,48 @@ def changePetAvatar(request):
         path = 'media/PetSpace/'+PetSpaceID+'.jpg'
         with open(path, 'wb') as f:
             f.write(avatar)
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def addBill(request):
+    try:
+        openid = request.GET.get('openid')
+        PetSpaceID = request.GET.get('PetSpaceID')
+        date = request.GET.get('date')
+        content = request.GET.get('content')
+        type = request.GET.get('type')
+        money = request.GET.get('money')
+        user = User.objects.get(openid=openid)
+        bills = json.loads(user.bills) if user.bills else []
+        bills.insert(0, {'date': date, 'content': content,
+                     'type': type, 'money': money, 'PetSpaceID': PetSpaceID})
+        user.bills = json.dumps(bills)
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def showBills(request):
+    try:
+        openid = request.GET.get('openid')
+        user = User.objects.get(openid=openid)
+        bills = json.loads(user.bills) if user.bills else []
+        return JsonResponse(bills, safe=False)
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def deleteBill(request):
+    try:
+        openid = request.GET.get('openid')
+        index = request.GET.get('index')
+        user = User.objects.get(openid=openid)
+        bills = json.loads(user.bills) if user.bills else []
+        bills.pop(int(index))
+        user.bills = json.dumps(bills)
+        user.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})

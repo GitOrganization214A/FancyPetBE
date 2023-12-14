@@ -27,6 +27,11 @@ class User(models.Model):
         null=True,
         default=list
     )
+    bills = models.JSONField(
+        blank=True,
+        null=True,
+        default=list
+    )
 
 
 class Article(models.Model):

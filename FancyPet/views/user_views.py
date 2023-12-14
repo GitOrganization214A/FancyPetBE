@@ -247,10 +247,8 @@ def myFans(request):
 
 def init(request):
     for user in User.objects.all():
-        user.followUsers = json.dumps([])
-        user.follow = 0
-        user.fans = 0
-        user.save()
+        print(user.nickname)
+        print(json.loads(user.followUsers) if user.followUsers else [])
     return JsonResponse({'status': 'success'})
 
 # def init(request):

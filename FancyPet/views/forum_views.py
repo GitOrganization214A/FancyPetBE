@@ -201,9 +201,13 @@ def likeArticle(request):
         print(operartion)
         article = Article.objects.get(ArticleID=ArticleID)
         if operartion == 'like':
+            if ArticleID in likedArticles:
+                return JsonResponse({'status': 'Error', 'message': 'Already liked'})
             article.like += 1
             likedArticles.append(ArticleID)
         elif operartion == 'cancel' and ArticleID in likedArticles:
+            if ArticleID not in likedArticles:
+                return JsonResponse({'status': 'Error', 'message': 'Not liked'})
             article.like -= 1
             likedArticles.remove(ArticleID)
         article.save()
@@ -226,9 +230,13 @@ def likeComment(request):
         print(CommentID)
         comment = Comment.objects.get(CommentID=CommentID)
         if operartion == 'like':
+            if CommentID in likedComments:
+                return JsonResponse({'status': 'Error', 'message': 'Already liked'})
             comment.like += 1
             likedComments.append(CommentID)
         elif operartion == 'cancel' and CommentID in likedComments:
+            if CommentID not in likedComments:
+                return JsonResponse({'status': 'Error', 'message': 'Not liked'})
             comment.like -= 1
             likedComments.remove(CommentID)
         comment.save()
