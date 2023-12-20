@@ -27,6 +27,11 @@ class User(models.Model):
         null=True,
         default=list
     )
+    followPets = models.JSONField(
+        blank=True,
+        null=True,
+        default=list
+    )
     bills = models.JSONField(
         blank=True,
         null=True,
@@ -70,6 +75,11 @@ class PetSpace(models.Model):
         null=True
     )
     healthRecord = models.JSONField(blank=True, null=True, default=list)
+    shareUsers = models.JSONField(
+        blank=True,
+        null=True,
+        default=list
+    )
 
 
 class Comment(models.Model):

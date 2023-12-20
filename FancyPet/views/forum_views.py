@@ -371,6 +371,16 @@ def viewUserInfo(request):
         articles = Article.objects.filter(openid=user.openid)
         articles_data = getArticlesDict(openid, articles)
 
+        petSpaces = PetSpace.objects.filter(openid=user.openid, public=1)
+        pets = []
+        for petSpace in petSpaces:
+            pets.append({
+                'PetSpaceID': petSpace.PetSpaceID,
+                'name': petSpace.name,
+                'avatar': petSpace.avatar,
+                'breed': petSpace.breed,
+            })
+
         me = User.objects.get(openid=openid)
         followUsers = json.loads(
             me.followUsers) if me.followUsers else []
@@ -385,6 +395,7 @@ def viewUserInfo(request):
             'self': openid == user.openid,
             'followed': UserID in followUsers,
             'articles': articles_data,
+            'pets': pets,
         }
         return JsonResponse(data, safe=False)
     except Exception as e:
