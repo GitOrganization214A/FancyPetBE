@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from FancyPet.models import User, Article, PetSpace, Count, Comment, Activity
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
-from .user_views import getUserInfo
+from .forum_views import getArticlesDict
 import requests
 import json
 import os
@@ -16,17 +16,18 @@ def newPetSpace(request):
     print(request.POST)
     avatar = request.FILES.get('avatar', None).read()
     openid = request.POST.get('openid')
-    name = request.POST.get('name')
-    breed = request.POST.get('breed')
-    year = request.POST.get('year')
-    month = request.POST.get('month')
-    gender = request.POST.get('gender')
+    name = request.POST.get('name', '未命名')
+    breed = request.POST.get('breed', '未选择')
+    year = request.POST.get('year', '0')
+    month = request.POST.get('month', '1')
+    gender = request.POST.get('gender', '未选择')
 
     count = Count.objects.get(CountID="1")
     path = 'media/PetSpace/'+str(count.PetSpaceNum)+'.jpg'
     PetSpace.objects.create(
         openid=openid,
         PetSpaceID=str(count.PetSpaceNum),
+        public=0,
         name=name,
         avatar=host_name+path,
         breed=breed,
@@ -92,6 +93,19 @@ def deletePetSpace(request):
     try:
         PetSpaceID = request.GET.get('PetSpaceID')
         PetSpace.objects.get(PetSpaceID=PetSpaceID).delete()
+
+        for activity in Activity.objects.filter(PetSpaceID=PetSpaceID):
+            activity.delete()
+        for article in Article.objects.filter(PetSpaceID=PetSpaceID):
+            article.PetSpaceID = '0'
+            article.save()
+        for user in User.objects.all():
+            bills = json.loads(user.bills) if user.bills else []
+            for bill in bills:
+                if bill['PetSpaceID'] == PetSpaceID:
+                    bill['PetSpaceID'] = '0'
+            user.bills = json.dumps(bills)
+            user.save()
         return JsonResponse({'status': 'success'})
 
     except ObjectDoesNotExist:
@@ -256,19 +270,33 @@ def changePetAvatar(request):
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
-def addBill(request):
+def petArticles(request):
     try:
         openid = request.GET.get('openid')
         PetSpaceID = request.GET.get('PetSpaceID')
+        articles = Article.objects.filter(PetSpaceID=PetSpaceID)
+        data = getArticlesDict(articles, openid)
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
+
+
+def addBill(request):
+    try:
+        openid = request.GET.get('openid')
+        PetSpaceID = request.GET.get('PetSpaceID', 0)
         date = request.GET.get('date')
-        content = request.GET.get('content')
-        type = request.GET.get('type')
-        money = request.GET.get('money')
+        content = request.GET.get('content', '')
+        type = request.GET.get('type', '')
+        money = request.GET.get('money', 0.0)
         user = User.objects.get(openid=openid)
         bills = json.loads(user.bills) if user.bills else []
         bills.insert(0, {'date': date, 'content': content,
                      'type': type, 'money': money, 'PetSpaceID': PetSpaceID})
         user.bills = json.dumps(bills)
+        user.save()
+        print(bills)
+
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -279,7 +307,18 @@ def showBills(request):
         openid = request.GET.get('openid')
         user = User.objects.get(openid=openid)
         bills = json.loads(user.bills) if user.bills else []
-        return JsonResponse(bills, safe=False)
+        cost = 0.0
+
+        for bill in bills:
+            print(bill)
+            cost += float(bill['money'])
+            pet = PetSpace.objects.get(PetSpaceID=bill['PetSpaceID'])
+            bill['avatar'] = pet.avatar
+            bill['name'] = pet.name
+
+        data = {'bills': bills, 'cost': cost}
+        print(data)
+        return JsonResponse(data)
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
 

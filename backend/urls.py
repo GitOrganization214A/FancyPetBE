@@ -75,4 +75,12 @@ urlpatterns = [
     path('api/v1/myFans/', views.myFans, name='myFans'),
     path('api/v1/deleteHealthRecord/',
          views.deleteHealthRecord, name='deleteHealthRecord'),
+    path('api/v1/viewZoneArticlesTime/',
+         views.viewZoneArticlesTime, name='viewZoneArticlesTime'),
+    path('api/v1/viewZoneArticlesHot/',
+         views.viewZoneArticlesHot, name='viewZoneArticlesHot'),
+    path('api/v1/petArticles/', views.petArticles, name='petArticles'),
+    path('api/v1/addBill/', views.addBill, name='addBill'),
+    path('api/v1/showBills/', views.showBills, name='showBills'),
+    path('api/v1/deleteBill/', views.deleteBill, name='deleteBill'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

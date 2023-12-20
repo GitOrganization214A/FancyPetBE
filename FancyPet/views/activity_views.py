@@ -63,6 +63,10 @@ def postAdopt(request):
         )
         count.ActivityNum += 1
         count.save()
+
+        pet = PetSpace.objects.get(PetSpaceID=PetSpaceID)
+        pet.public = 1
+        pet.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -138,6 +142,10 @@ def postLove(request):
         )
         count.ActivityNum += 1
         count.save()
+
+        pet = PetSpace.objects.get(PetSpaceID=PetSpaceID)
+        pet.public = 1
+        pet.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -172,6 +180,10 @@ def applyLove(request):
         user2 = User.objects.get(openid=activity.openid)
         user2.newMessage += 1
         user2.save()
+
+        pet = PetSpace.objects.get(PetSpaceID=PetSpaceID)
+        pet.public = 1
+        pet.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})

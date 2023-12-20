@@ -39,6 +39,8 @@ class Article(models.Model):
     UserID = models.CharField(max_length=255, default='0')
     ArticleID = models.CharField(max_length=255, default='0')
     PetSpaceID = models.CharField(max_length=255, default='0')
+    zone = models.CharField(max_length=255, default='')
+    subzone = models.CharField(max_length=255, default='')
     title = models.CharField(max_length=255)
     content = models.TextField()
     images = models.JSONField(
@@ -54,6 +56,7 @@ class Article(models.Model):
 
 class PetSpace(models.Model):
     openid = models.CharField(max_length=255)
+    public = models.IntegerField(default=0)
     PetSpaceID = models.CharField(max_length=255, default='0')
     name = models.CharField(max_length=255)
     breed = models.CharField(max_length=255)

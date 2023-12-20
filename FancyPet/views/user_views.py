@@ -246,9 +246,10 @@ def myFans(request):
 
 
 def init(request):
-    for user in User.objects.all():
-        print(user.nickname)
-        print(json.loads(user.followUsers) if user.followUsers else [])
+    for article in Article.objects.all():
+        article.PetSpaceID = "0"
+        article.save()
+
     return JsonResponse({'status': 'success'})
 
 # def init(request):
