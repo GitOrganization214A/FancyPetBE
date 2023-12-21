@@ -59,7 +59,7 @@ def viewPetSpace(request):
         openid = request.GET.get('openid', '')
         PetSpaceID = request.GET.get('PetSpaceID')
         petSpace = PetSpace.objects.get(PetSpaceID=PetSpaceID)
-        if petSpace.public == 0 and petSpace.openid != openid:
+        if petSpace.public == 0 and permission(openid, PetSpaceID) == False:
             return JsonResponse({'status': 'Error', 'message': 'No permission'})
 
         shareUsers = json.loads(
@@ -71,8 +71,6 @@ def viewPetSpace(request):
             role = 'shareUser'
         else:
             role = 'visitor'
-        user = User.objects.get(openid=petSpace.openid)
-        followPets = json.loads(user.followPets) if user.followPets else []
         data = {
             'name': petSpace.name,
             'avatar': petSpace.avatar,
@@ -83,7 +81,6 @@ def viewPetSpace(request):
             'images': json.loads(petSpace.images),
             'role': role,
             'public': petSpace.public == 1,
-            'followed': PetSpaceID in followPets,
         }
         print(data)
         return JsonResponse(data)
@@ -117,9 +114,13 @@ def PetSpaces(request):
 
 def deletePetSpace(request):
     try:
+        openid = request.GET.get('openid')
         PetSpaceID = request.GET.get('PetSpaceID')
-        PetSpace.objects.get(PetSpaceID=PetSpaceID).delete()
+        pet = PetSpace.objects.get(PetSpaceID=PetSpaceID)
+        if openid != pet.openid:
+            return JsonResponse({'status': 'Error', 'message': 'No permission'})
 
+        pet.delete()
         for activity in Activity.objects.filter(PetSpaceID=PetSpaceID):
             activity.delete()
         for article in Article.objects.filter(PetSpaceID=PetSpaceID):
@@ -144,8 +145,12 @@ def deletePetSpace(request):
 @csrf_exempt
 def newPhoto(request):
     try:
+        openid = request.POST.get('openid')
         PetSpaceID = request.POST.get('PetSpaceID')
         image = request.FILES.get('image', None)
+
+        if permission(openid, PetSpaceID) == False:
+            return JsonResponse({'status': 'Error', 'message': 'No permission'})
         file = image.read()
 
         petSpace = PetSpace.objects.get(PetSpaceID=PetSpaceID)
@@ -174,8 +179,12 @@ def newPhoto(request):
 
 def deletePhoto(request):
     try:
+        openid = request.GET.get('openid')
         PetSpaceID = request.GET.get('PetSpaceID')
         index = request.GET.get('index')
+
+        if permission(openid, PetSpaceID) == False:
+            return JsonResponse({'status': 'Error', 'message': 'No permission'})
 
         petSpace = PetSpace.objects.get(PetSpaceID=PetSpaceID)
         images = json.loads(petSpace.images)
@@ -369,7 +378,7 @@ def addShareUser(request):
         PetSpaceID = request.GET.get('PetSpaceID')
         UserID = request.GET.get('UserID')
         pet = PetSpace.objects.get(PetSpaceID=PetSpaceID)
-        if permission(openid, PetSpaceID) == False:
+        if openid != pet.openid:
             return JsonResponse({'status': 'Error', 'message': 'No permission'})
         user = User.objects.get(UserID=UserID)
         shareUsers = json.loads(pet.shareUsers) if pet.shareUsers else []
@@ -399,9 +408,9 @@ def showShareUsers(request):
                 'nickname': user.nickname,
                 'avatar': user.avatar,
             })
-        print(data)
         return JsonResponse(data, safe=False)
     except Exception as e:
+        print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -412,10 +421,12 @@ def deleteShareUser(request):
         UserID = request.GET.get('UserID')
         pet = PetSpace.objects.get(PetSpaceID=PetSpaceID)
         shareUsers = json.loads(pet.shareUsers) if pet.shareUsers else []
+        user = User.objects.get(UserID=UserID)
         if permission(openid, PetSpaceID) == False:
             return JsonResponse({'status': 'Error', 'message': 'No permission'})
+        if openid != user.openid and openid != pet.openid:
+            return JsonResponse({'status': 'Error', 'message': 'No permission'})
 
-        user = User.objects.get(UserID=UserID)
         if user.openid in shareUsers:
             shareUsers.remove(user.openid)
             pet.shareUsers = json.dumps(shareUsers)
@@ -424,6 +435,7 @@ def deleteShareUser(request):
         else:
             return JsonResponse({'status': 'Error', 'message': 'No such user'})
     except Exception as e:
+        print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 

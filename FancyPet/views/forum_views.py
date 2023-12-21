@@ -75,18 +75,6 @@ def getArticlesDict(openid, articles):
     return data
 
 
-# def searchArticles(openid, keyword):
-#     # 使用SearchQuery进行模糊搜索
-#     search_query = SearchQuery(keyword, lookup_type='icontains')
-
-#     # 使用annotate方法添加搜索字段并执行模糊搜索
-#     articles = Article.objects.annotate(
-#         search=search_query).filter(search=keyword)
-
-#     # 获取文章字典数据
-#     data = getArticlesDict(openid, articles)
-#     return data
-
 def searchArticles(openid, keyword):
     articles = Article.objects.filter(
         Q(title__contains=keyword) | Q(content__contains=keyword) | Q(zone__contains=keyword) | Q(subzone__contains=keyword))
@@ -115,16 +103,6 @@ def deleteComment(request):
         article.comment -= 1
         article.save()
         comment.delete()
-        return JsonResponse({'status': 'success'})
-    except Exception as e:
-        return JsonResponse({'status': 'Error', 'message': str(e)})
-
-
-def deletePetSpace(request):
-    try:
-        PetSpaceID = request.GET.get('PetSpaceID')
-        petSpace = PetSpace.objects.get(PetSpaceID=PetSpaceID)
-        petSpace.delete()
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})

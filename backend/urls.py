@@ -85,6 +85,6 @@ urlpatterns = [
     path('api/v1/deleteBill/', views.deleteBill, name='deleteBill'),
     path('api/v1/addShareUser/', views.addShareUser, name='addShareUser'),
     path('api/v1/showShareUsers/', views.showShareUsers, name='showShareUsers'),
-    path('deleteShareUser/', views.deleteShareUser, name='deleteShareUser'),
+    path('api/v1/deleteShareUser/', views.deleteShareUser, name='deleteShareUser'),
     path('api/v1/changeOwner/', views.changeOwner, name='changeOwner'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -246,9 +246,7 @@ def myFans(request):
 
 
 def init(request):
-    for article in Article.objects.all():
-        article.PetSpaceID = "0"
-        article.save()
+    User.objects.get(UserID='2').delete()
 
     return JsonResponse({'status': 'success'})
 
