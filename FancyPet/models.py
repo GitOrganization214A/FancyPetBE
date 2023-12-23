@@ -46,8 +46,8 @@ class Article(models.Model):
     PetSpaceID = models.CharField(max_length=255, default='0')
     zone = models.CharField(max_length=255, default='')
     subzone = models.CharField(max_length=255, default='')
-    title = models.CharField(max_length=255)
-    content = models.TextField()
+    title = models.CharField(max_length=255, db_collation='utf8mb4_unicode_ci')
+    content = models.TextField(db_collation='utf8mb4_unicode_ci')
     images = models.JSONField(
         blank=True,
         null=True

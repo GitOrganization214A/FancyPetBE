@@ -279,7 +279,8 @@ def postArticle(request):
             title = request.GET.get('title', '')
             content = request.GET.get('content', '')
             PetSpaceID = request.GET.get('PetSpaceID', '0')
-            print("petSpaceID:", PetSpaceID)
+            if PetSpaceID == '':
+                PetSpaceID = '0'
             zone = request.GET.get('zone', '')
             subzone = request.GET.get('subzone', '')
             user = User.objects.get(openid=openid)
