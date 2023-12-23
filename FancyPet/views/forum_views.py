@@ -6,12 +6,14 @@ from django.core.exceptions import ObjectDoesNotExist
 from .user_views import getUserInfo
 from django.db.models import Q
 from django.contrib.postgres.search import SearchQuery
+from django.core.paginator import Paginator
 
 import requests
 import json
 import os
 
 host_name = 'http://43.143.139.4:8000/'
+articles_per_page = 10
 
 
 def getComments(openid, ArticleID):
@@ -328,13 +330,23 @@ def postArticle(request):
 def HotArticles(request):
     try:
         openid = request.GET.get('openid')
-        print(openid)
-        # 获取数据库中所有的Article对象
-        articles = Article.objects.all()
-        data = getArticlesDict(openid, articles)
+        page = request.GET.get('page', 1)
 
-        data.sort(key=lambda x: x['like'], reverse=True)
-        print(data)
+        # 获取数据库中所有的Article对象
+        articles = Article.objects.all().order_by('-like')
+
+        # 创建Paginator对象
+        paginator = Paginator(articles, articles_per_page)
+
+        try:
+            # 获取指定页的文章数据
+            paginated_data = paginator.page(page).object_list
+        except Exception:
+            # 如果页数超出范围，则返回空列表
+            paginated_data = []
+
+        # 将每个Article对象转换成字典
+        data = getArticlesDict(openid, paginated_data)
         return JsonResponse(data, safe=False)
     except Exception as e:
         print(e)
@@ -415,11 +427,22 @@ def follow(request):
 def followArticles(request):
     try:
         openid = request.GET.get('openid')
+        page = request.GET.get('page', 1)
         user = User.objects.get(openid=openid)
         followUsers = json.loads(
             user.followUsers) if user.followUsers else []
         articles = Article.objects.filter(UserID__in=followUsers)
-        data = getArticlesDict(openid, articles)
+
+        # 创建Paginator对象
+        paginator = Paginator(articles, articles_per_page)
+
+        try:
+            # 获取指定页的文章数据
+            paginated_data = paginator.page(page).object_list
+        except Exception:
+            # 如果页数超出范围，则返回空列表
+            paginated_data = []
+        data = getArticlesDict(openid, paginated_data)
         return JsonResponse(data, safe=False)
     except Exception as e:
         print(e)
@@ -430,12 +453,23 @@ def searchArticlesHot(request):
     try:
         openid = request.GET.get('openid')
         keyword = request.GET.get('keyword')
-        articles = searchArticles(openid, keyword)
-        # articles 按点赞数排序
-        articles.sort(key=lambda x: x['like'], reverse=True)
+        page = request.GET.get('page', 1)
+        articles = Article.objects.filter(
+            Q(title__contains=keyword) | Q(content__contains=keyword) | Q(zone__contains=keyword) | Q(subzone__contains=keyword)).order_by('-like')
+
+        # 创建Paginator对象
+        paginator = Paginator(articles, articles_per_page)
+
+        try:
+            # 获取指定页的文章数据
+            paginated_data = paginator.page(page).object_list
+        except Exception:
+            # 如果页数超出范围，则返回空列表
+            paginated_data = []
+        dict = getArticlesDict(openid, paginated_data)
         data = {
-            'num': len(articles),
-            'articles': articles,
+            'num': len(dict),
+            'articles': dict,
         }
         return JsonResponse(data, safe=False)
     except Exception as e:
@@ -447,12 +481,26 @@ def searchArticlesTime(request):
     try:
         openid = request.GET.get('openid')
         keyword = request.GET.get('keyword')
-        articles = searchArticles(openid, keyword)
-        # articles 按时间排序
-        articles.sort(key=lambda x: x['time'], reverse=True)
+        page = request.GET.get('page', 1)
+        # articles = searchArticles(openid, keyword)
+        # # articles 按时间排序
+        # articles.sort(key=lambda x: x['time'], reverse=True)
+        articles = Article.objects.filter(
+            Q(title__contains=keyword) | Q(content__contains=keyword) | Q(zone__contains=keyword) | Q(subzone__contains=keyword)).order_by('-time')
+
+        # 创建Paginator对象
+        paginator = Paginator(articles, articles_per_page)
+
+        try:
+            # 获取指定页的文章数据
+            paginated_data = paginator.page(page).object_list
+        except Exception:
+            # 如果页数超出范围，则返回空列表
+            paginated_data = []
+        dict = getArticlesDict(openid, paginated_data)
         data = {
-            'num': len(articles),
-            'articles': articles,
+            'num': len(dict),
+            'articles': dict,
         }
         return JsonResponse(data, safe=False)
     except Exception as e:
@@ -465,13 +513,26 @@ def viewZoneArticlesHot(request):
         openid = request.GET.get('openid')
         zone = request.GET.get('zone', '')
         subzone = request.GET.get('subzone', '')
-        if zone != '':
-            articles = Article.objects.filter(zone=zone)
+        page = request.GET.get('page', 1)
         if subzone != '':
-            articles = Article.objects.filter(subzone=subzone)
-        articles = getArticlesDict(openid, articles)
-        # articles 按点赞数排序
-        articles.sort(key=lambda x: x['like'], reverse=True)
+            articles = Article.objects.filter(
+                subzone=subzone).order_by('-like')
+        elif zone != '':
+            articles = Article.objects.filter(
+                zone=zone).order_by('-like')
+        else:
+            articles = Article.objects.all().order_by('-like')
+
+        # 创建Paginator对象
+        paginator = Paginator(articles, articles_per_page)
+
+        try:
+            # 获取指定页的文章数据
+            paginated_data = paginator.page(page).object_list
+        except Exception:
+            # 如果页数超出范围，则返回空列表
+            paginated_data = []
+        articles = getArticlesDict(openid, paginated_data)
         return JsonResponse(articles, safe=False)
     except Exception as e:
         print(e)
@@ -483,13 +544,27 @@ def viewZoneArticlesTime(request):
         openid = request.GET.get('openid')
         zone = request.GET.get('zone', '')
         subzone = request.GET.get('subzone', '')
-        if zone != '':
-            articles = Article.objects.filter(zone=zone)
+        page = request.GET.get('page', 1)
         if subzone != '':
-            articles = Article.objects.filter(subzone=subzone)
-        articles = getArticlesDict(openid, articles)
-        # articles 按时间排序
-        articles.sort(key=lambda x: x['time'], reverse=True)
+            articles = Article.objects.filter(
+                subzone=subzone).order_by('-time')
+        elif zone != '':
+            articles = Article.objects.filter(
+                zone=zone).order_by('-time')
+        else:
+            articles = Article.objects.all().order_by('-time')
+
+        # 创建Paginator对象
+        paginator = Paginator(articles, articles_per_page)
+
+        try:
+            # 获取指定页的文章数据
+            paginated_data = paginator.page(page).object_list
+        except Exception:
+            # 如果页数超出范围，则返回空列表
+            paginated_data = []
+        articles = getArticlesDict(openid, paginated_data)
+
         return JsonResponse(articles, safe=False)
     except Exception as e:
         print(e)
