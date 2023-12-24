@@ -4,11 +4,14 @@ from FancyPet.models import User, Article, PetSpace, Count, Comment, Activity, M
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
 from .user_views import getUserInfo
+from django.core.paginator import Paginator
 import requests
 import json
 import os
 
 host_name = 'http://43.143.139.4:8000/'
+activity_per_page = 10
+video_per_page = 5
 
 
 def getPetInfo(PetSpaceID):
@@ -27,9 +30,18 @@ def getPetInfo(PetSpaceID):
 def adoptPet(request):
     try:
         openid = request.GET.get('openid')
-        activities = Activity.objects.filter(type="adopt")
+        activities = Activity.objects.filter(
+            type="adopt").order_by('-time')
+        page = request.GET.get('page', 1)
+        paginator = Paginator(activities, activity_per_page)
+
+        try:
+            paginated_data = paginator.page(page).object_list
+        except Exception:
+            paginated_data = []
+
         data = []
-        for activity in activities:
+        for activity in paginated_data:
             user = User.objects.get(openid=activity.openid)
             data.append({
                 'UserID': user.UserID,
@@ -41,7 +53,7 @@ def adoptPet(request):
                 'self': activity.openid == openid,
                 'pet': getPetInfo(activity.PetSpaceID),
             })
-        print(data)
+        # print(data)
         return JsonResponse(data, safe=False)
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -106,9 +118,16 @@ def applyAdopt(request):
 def lovePet(request):
     try:
         openid = request.GET.get('openid')
-        activities = Activity.objects.filter(type="love")
+        activities = Activity.objects.filter(type="love").order_by('-time')
+        page = request.GET.get('page', 1)
+
+        paginator = Paginator(activities, activity_per_page)
+        try:
+            paginated_data = paginator.page(page).object_list
+        except Exception:
+            paginated_data = []
         data = []
-        for activity in activities:
+        for activity in paginated_data:
             user = User.objects.get(openid=activity.openid)
             data.append({
                 'UserID': user.UserID,
@@ -120,7 +139,7 @@ def lovePet(request):
                 'self': activity.openid == openid,
                 'pet': getPetInfo(activity.PetSpaceID),
             })
-        print(data)
+        # print(data)
         return JsonResponse(data, safe=False)
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -148,6 +167,7 @@ def postLove(request):
         pet.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
+        print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -191,12 +211,12 @@ def applyLove(request):
 
 @csrf_exempt
 def postParty(request):
-    print(request.POST)
-    print(request.FILES)
+    # print(request.POST)
+    # print(request.FILES)
     try:
         openid = request.POST.get('openid')
         content = request.POST.get('content')
-        time = request.POST.get('date')
+        date = request.POST.get('date')
         address = request.POST.get('address')
         title = request.POST.get('title')
         image = request.FILES.get('image').read()
@@ -211,7 +231,7 @@ def postParty(request):
             title=title,
             content=content,
             type="party",
-            time=time,
+            date=date,
             address=address,
             img=host_name+path,
         )
@@ -219,30 +239,38 @@ def postParty(request):
         count.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
-        print(e)
+        # print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
 def partyPet(request):
     try:
         openid = request.GET.get('openid')
-        activities = Activity.objects.filter(type="party")
+        activities = Activity.objects.filter(type="party").order_by('-time')
+        page = request.GET.get('page', 1)
+
+        paginator = Paginator(activities, activity_per_page)
+        try:
+            paginated_data = paginator.page(page).object_list
+        except Exception:
+            paginated_data = []
         data = []
-        for activity in activities:
+        for activity in paginated_data:
+            print(activity.openid)
             user = User.objects.get(openid=activity.openid)
             data.append({
                 'UserID': user.UserID,
                 'ActivityID': activity.ActivityID,
                 'nickname': user.nickname,
                 'avatar': user.avatar,
-                'time': activity.time,
+                'time': activity.date,
                 'address': activity.address,
                 'title': activity.title,
                 'content': activity.content,
                 'img': activity.img,
                 'self': activity.openid == openid,
             })
-        print(data)
+        # print(data)
         return JsonResponse(data, safe=False)
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -295,6 +323,7 @@ def deleteActivity(request):
 def petVideos(request):
     try:
         openid = request.GET.get('openid')
+        page = request.GET.get('page', 1)
         me = User.objects.get(openid=openid)
         likedArticles = json.loads(
             me.likedArticles) if me.likedArticles else []
@@ -320,9 +349,15 @@ def petVideos(request):
                         'liked': article.ArticleID in likedArticles,
                         'self': article.openid == openid,
                     })
-        return JsonResponse(data, safe=False)
+
+        paginator = Paginator(data, video_per_page)
+        try:
+            paginated_data = paginator.page(page).object_list
+        except Exception:
+            paginated_data = []
+        return JsonResponse(paginated_data, safe=False)
     except Exception as e:
-        print(e)
+        # print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 

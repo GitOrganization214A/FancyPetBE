@@ -98,7 +98,8 @@ class Activity(models.Model):
     PetSpaceID = models.CharField(max_length=255, default='0')
     title = models.CharField(max_length=255)
     content = models.TextField()
-    time = models.CharField(max_length=255, default='')
+    date = models.CharField(max_length=255, default='')
+    time = models.DateTimeField(auto_now_add=True)
     address = models.CharField(max_length=255, default='')
     img = models.CharField(max_length=255, default='')
 

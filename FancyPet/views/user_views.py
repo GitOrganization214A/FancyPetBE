@@ -246,8 +246,5 @@ def myFans(request):
 
 
 def init(request):
-    num = 0
-    for article in Article.objects.all():
-        num += 1
-    print(num)
+    Message.objects.all().delete()
     return JsonResponse({'status': 'success'})

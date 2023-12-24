@@ -82,7 +82,7 @@ def viewPetSpace(request):
             'role': role,
             'public': petSpace.public == 1,
         }
-        print(data)
+        print(petSpace.public)
         return JsonResponse(data)
 
     except ObjectDoesNotExist:
@@ -473,6 +473,7 @@ def setPublic(request):
         if operation == 'public' and pet.public == 0:
             pet.public = 1
             pet.save()
+            print(111)
             return JsonResponse({'status': 'success'})
         elif operation == 'private' and pet.public == 1:
             pet.public = 0

@@ -7,6 +7,7 @@ from .user_views import getUserInfo
 from django.db.models import Q
 from django.contrib.postgres.search import SearchQuery
 from django.core.paginator import Paginator
+from django.db.models import F
 
 import requests
 import json
@@ -14,15 +15,15 @@ import os
 
 host_name = 'http://43.143.139.4:8000/'
 articles_per_page = 10
+comments_per_page = 10
 
 
-def getComments(openid, ArticleID):
+def getComments(openid, commentList):
     user = User.objects.get(openid=openid)
     likedComments = json.loads(
         user.likedComments) if user.likedComments else []
     # 找到帖子的评论
     comments = []
-    commentList = Comment.objects.filter(ArticleID=ArticleID)
     for comment in commentList:
         user = User.objects.get(openid=comment.openid)
         comments.append({
@@ -116,8 +117,10 @@ def postComment(request):
     content = request.GET.get('content')
     article = Article.objects.get(ArticleID=ArticleID)
     if article:
-        article.comment += 1
-        article.save()
+        # article.comment += 1
+        # article.save()
+        Article.objects.filter(ArticleID=ArticleID).update(
+            comment=F('comment') + 1)
 
         count = Count.objects.get(CountID="1")
         Comment.objects.create(
@@ -138,7 +141,7 @@ def viewArticle(request):
     try:
         ArticleID = request.GET.get('ArticleID')
         openid = request.GET.get('openid')
-        article = Article.objects.get(ArticleID=ArticleID)
+        article = Article.objects.filter(ArticleID=ArticleID)[0]
 
         article.read += 1
         article.save()
@@ -189,9 +192,22 @@ def viewCommentsHot(request):
     try:
         openid = request.GET.get('openid')
         ArticleID = request.GET.get('ArticleID')
-        comments = getComments(openid, ArticleID)
+        page = request.GET.get('page', 1)
+        comments = Comment.objects.filter(
+            ArticleID=ArticleID).order_by('-like')
+
+        paginator = Paginator(comments, comments_per_page)
+
+        try:
+            # 获取指定页的文章数据
+            paginated_data = paginator.page(page).object_list
+        except Exception:
+            # 如果页数超出范围，则返回空列表
+            paginated_data = []
+
+        comments = getComments(openid, paginated_data)
         # comments 按点赞数排序
-        comments.sort(key=lambda x: x['like'], reverse=True)
+
         return JsonResponse(comments, safe=False)
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -201,9 +217,19 @@ def viewCommentsTime(request):
     try:
         openid = request.GET.get('openid')
         ArticleID = request.GET.get('ArticleID')
-        comments = getComments(openid, ArticleID)
-        # comments 按时间排序
-        comments.sort(key=lambda x: x['time'], reverse=True)
+        page = request.GET.get('page', 1)
+        comments = Comment.objects.filter(
+            ArticleID=ArticleID).order_by('-time')
+        paginator = Paginator(comments, comments_per_page)
+
+        try:
+            # 获取指定页的文章数据
+            paginated_data = paginator.page(page).object_list
+        except Exception:
+            # 如果页数超出范围，则返回空列表
+            paginated_data = []
+
+        comments = getComments(openid, paginated_data)
         return JsonResponse(comments, safe=False)
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -217,7 +243,7 @@ def likeArticle(request):
         user = User.objects.get(openid=openid)
         likedArticles = json.loads(
             user.likedArticles) if user.likedArticles else []
-        print(operartion)
+        # print(operartion)
         article = Article.objects.get(ArticleID=ArticleID)
         if operartion == 'like':
             if ArticleID in likedArticles:
@@ -245,8 +271,8 @@ def likeComment(request):
         user = User.objects.get(openid=openid)
         likedComments = json.loads(
             user.likedComments) if user.likedComments else []
-        print(operartion)
-        print(CommentID)
+        # print(operartion)
+        # print(CommentID)
         comment = Comment.objects.get(CommentID=CommentID)
         if operartion == 'like':
             if CommentID in likedComments:
@@ -268,11 +294,11 @@ def likeComment(request):
 
 @csrf_exempt
 def postArticle(request):
-    print("get:", request.GET)
-    print("post:", request.POST)
+    # print("get:", request.GET)
+    # print("post:", request.POST)
     try:
         if request.method == 'GET':
-            count = Count.objects.get(CountID="1")
+
             images = []
 
             openid = request.GET.get('openid')
@@ -284,6 +310,7 @@ def postArticle(request):
             zone = request.GET.get('zone', '')
             subzone = request.GET.get('subzone', '')
             user = User.objects.get(openid=openid)
+            count = Count.objects.get(CountID="1")
             Article.objects.create(
                 openid=openid,
                 UserID=user.UserID,
@@ -324,7 +351,7 @@ def postArticle(request):
             article.save()
             return JsonResponse({'ArticleID': ArticleID})
     except Exception as e:
-        print(e)
+        # print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -350,7 +377,7 @@ def HotArticles(request):
         data = getArticlesDict(openid, paginated_data)
         return JsonResponse(data, safe=False)
     except Exception as e:
-        print(e)
+        # print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -359,7 +386,7 @@ def viewUserInfo(request):
         openid = request.GET.get('openid')
         UserID = request.GET.get('UserID')
         user = User.objects.get(UserID=UserID)
-        articles = Article.objects.filter(openid=user.openid)
+        articles = Article.objects.filter(openid=user.openid).order_by('-time')
         articles_data = getArticlesDict(openid, articles)
 
         petSpaces = PetSpace.objects.filter(openid=user.openid, public=1)
@@ -375,7 +402,7 @@ def viewUserInfo(request):
         me = User.objects.get(openid=openid)
         followUsers = json.loads(
             me.followUsers) if me.followUsers else []
-        print(followUsers)
+        # print(followUsers)
         data = {
             'UserID': user.UserID,
             'nickname': user.nickname,
@@ -390,7 +417,7 @@ def viewUserInfo(request):
         }
         return JsonResponse(data, safe=False)
     except Exception as e:
-        print(e)
+        # print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -421,7 +448,7 @@ def follow(request):
         user2.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
-        print(e)
+        # print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -432,7 +459,8 @@ def followArticles(request):
         user = User.objects.get(openid=openid)
         followUsers = json.loads(
             user.followUsers) if user.followUsers else []
-        articles = Article.objects.filter(UserID__in=followUsers)
+        articles = Article.objects.filter(
+            Q(UserID__in=followUsers) | Q(openid=openid)).order_by('-time')
 
         # 创建Paginator对象
         paginator = Paginator(articles, articles_per_page)
@@ -446,7 +474,7 @@ def followArticles(request):
         data = getArticlesDict(openid, paginated_data)
         return JsonResponse(data, safe=False)
     except Exception as e:
-        print(e)
+        # print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -457,7 +485,7 @@ def searchArticlesHot(request):
         page = request.GET.get('page', 1)
         articles = Article.objects.filter(
             Q(title__contains=keyword) | Q(content__contains=keyword) | Q(zone__contains=keyword) | Q(subzone__contains=keyword)).order_by('-like')
-
+        num = len(articles)
         # 创建Paginator对象
         paginator = Paginator(articles, articles_per_page)
 
@@ -469,12 +497,12 @@ def searchArticlesHot(request):
             paginated_data = []
         dict = getArticlesDict(openid, paginated_data)
         data = {
-            'num': len(dict),
+            'num': num,
             'articles': dict,
         }
         return JsonResponse(data, safe=False)
     except Exception as e:
-        print(e)
+        # print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -488,7 +516,7 @@ def searchArticlesTime(request):
         # articles.sort(key=lambda x: x['time'], reverse=True)
         articles = Article.objects.filter(
             Q(title__contains=keyword) | Q(content__contains=keyword) | Q(zone__contains=keyword) | Q(subzone__contains=keyword)).order_by('-time')
-
+        num = len(articles)
         # 创建Paginator对象
         paginator = Paginator(articles, articles_per_page)
 
@@ -500,12 +528,12 @@ def searchArticlesTime(request):
             paginated_data = []
         dict = getArticlesDict(openid, paginated_data)
         data = {
-            'num': len(dict),
+            'num': num,
             'articles': dict,
         }
         return JsonResponse(data, safe=False)
     except Exception as e:
-        print(e)
+        # print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -536,7 +564,7 @@ def viewZoneArticlesHot(request):
         articles = getArticlesDict(openid, paginated_data)
         return JsonResponse(articles, safe=False)
     except Exception as e:
-        print(e)
+        # print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -568,7 +596,7 @@ def viewZoneArticlesTime(request):
 
         return JsonResponse(articles, safe=False)
     except Exception as e:
-        print(e)
+        # print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -580,5 +608,5 @@ def shareArticle(request):
         article.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
-        print(e)
+        # print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
