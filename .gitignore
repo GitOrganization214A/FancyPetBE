@@ -1,2 +1,6 @@
 /media/*
 /nohup.out
+/db.sqlite3
+/FancyPet/__pycache__/*
+/backend/config.py
+```

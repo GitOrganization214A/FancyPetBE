@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import backend.config as config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -78,8 +79,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'fancypet',
-        'USER': '214a',
-        'PASSWORD': 'fancy',
+        'USER': config.databeses_user,
+        'PASSWORD': config.databeses_password,
         'HOST': 'localhost',
         'PORT': '3306',
         'OPTIONS': {

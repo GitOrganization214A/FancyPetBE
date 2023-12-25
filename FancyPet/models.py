@@ -118,6 +118,12 @@ class Message(models.Model):
     time = models.DateTimeField(auto_now_add=True)
 
 
+class Video(models.Model):
+    ArticleID = models.CharField(max_length=255)
+    url = models.CharField(max_length=255)
+    time = models.DateTimeField(auto_now_add=True)
+
+
 class Count(models.Model):
     CountID = models.CharField(max_length=255)
     UserNum = models.IntegerField(default=1)

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from FancyPet.models import User, Article, PetSpace, Count, Comment, Activity, Message
+from FancyPet.models import User, Article, PetSpace, Count, Comment, Activity, Message, Video
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
 from .user_views import getUserInfo
@@ -328,36 +328,56 @@ def petVideos(request):
         likedArticles = json.loads(
             me.likedArticles) if me.likedArticles else []
 
-        data = []
-        for article in Article.objects.all():
-            images = json.loads(article.images) if article.images else []
-            for image in images:
-                if image['url'].endswith('.mp4'):
-                    user = User.objects.get(openid=article.openid)
-                    data.append({
-                        'ArticleID': article.ArticleID,
-                        'UserID': user.UserID,
-                        'nickname': user.nickname,
-                        'avatar': user.avatar,
-                        'title': article.title,
-                        'content': article.content,
-                        'video': image,
-                        'time': article.time,
-                        'like': article.like,
-                        'comment': article.comment,
-                        'share': article.share,
-                        'liked': article.ArticleID in likedArticles,
-                        'self': article.openid == openid,
-                    })
-
-        paginator = Paginator(data, video_per_page)
+        # data = []
+        # for article in Article.objects.all():
+        #     images = json.loads(article.images) if article.images else []
+        #     for image in images:
+        #         if image['url'].endswith('.mp4'):
+        #             user = User.objects.get(openid=article.openid)
+        #             data.append({
+        #                 'ArticleID': article.ArticleID,
+        #                 'UserID': user.UserID,
+        #                 'nickname': user.nickname,
+        #                 'avatar': user.avatar,
+        #                 'title': article.title,
+        #                 'content': article.content,
+        #                 'video': image,
+        #                 'time': article.time,
+        #                 'like': article.like,
+        #                 'comment': article.comment,
+        #                 'share': article.share,
+        #                 'liked': article.ArticleID in likedArticles,
+        #                 'self': article.openid == openid,
+        #             })
+        videos = Video.objects.all().order_by('-time')
+        paginator = Paginator(videos, video_per_page)
         try:
             paginated_data = paginator.page(page).object_list
         except Exception:
             paginated_data = []
-        return JsonResponse(paginated_data, safe=False)
+        data = []
+        for video in paginated_data:
+            article = Article.objects.get(ArticleID=video.ArticleID)
+            user = User.objects.get(openid=article.openid)
+            data.append({
+                'ArticleID': article.ArticleID,
+                'UserID': user.UserID,
+                'nickname': user.nickname,
+                'avatar': user.avatar,
+                'title': article.title,
+                'content': article.content,
+                'video': {'url': video.url},
+                'time': article.time,
+                'like': article.like,
+                'comment': article.comment,
+                'share': article.share,
+                'liked': article.ArticleID in likedArticles,
+                'self': article.openid == openid,
+            })
+        # print(data)
+        return JsonResponse(data, safe=False)
     except Exception as e:
-        # print(e)
+        print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 

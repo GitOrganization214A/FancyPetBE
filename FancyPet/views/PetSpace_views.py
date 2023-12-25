@@ -7,6 +7,8 @@ from .forum_views import getArticlesDict
 import requests
 import json
 import os
+import random
+import string
 
 host_name = 'http://43.143.139.4:8000/'
 
@@ -22,7 +24,7 @@ def permission(openid, PetSpaceID):
 
 @csrf_exempt
 def newPetSpace(request):
-    print(request.POST)
+    # print(request.POST)
     avatar = request.FILES.get('avatar', None).read()
     openid = request.POST.get('openid')
     name = request.POST.get('name', '未命名')
@@ -31,8 +33,10 @@ def newPetSpace(request):
     month = request.POST.get('month', '1')
     gender = request.POST.get('gender', '未选择')
 
+    random_string = ''.join(random.choice(
+        string.ascii_letters + string.digits) for _ in range(4))
     count = Count.objects.get(CountID="1")
-    path = 'media/PetSpace/'+str(count.PetSpaceNum)+'.jpg'
+    path = 'media/PetSpace/'+str(count.PetSpaceNum)+'_'+random_string+'.jpg'
     PetSpace.objects.create(
         openid=openid,
         PetSpaceID=str(count.PetSpaceNum),
@@ -82,7 +86,7 @@ def viewPetSpace(request):
             'role': role,
             'public': petSpace.public == 1,
         }
-        print(petSpace.public)
+        # print(petSpace.public)
         return JsonResponse(data)
 
     except ObjectDoesNotExist:
@@ -108,7 +112,7 @@ def PetSpaces(request):
                 'breed': petspace.breed,
                 'avatar': petspace.avatar,
             })
-    print(data)
+    # print(data)
     return JsonResponse(data, safe=False)
 
 
@@ -294,12 +298,20 @@ def changePetAvatar(request):
         openid = request.POST.get('openid')
         PetSpaceID = request.POST.get('PetSpaceID')
         avatar = request.FILES.get('avatar', None).read()
-        pet = PetSpace.objects.get(PetSpaceID=PetSpaceID)
+
         if permission(openid, PetSpaceID) == False:
             return JsonResponse({'status': 'Error', 'message': 'No permission'})
-        path = 'media/PetSpace/'+PetSpaceID+'.jpg'
+
+        random_string = ''.join(random.choice(
+            string.ascii_letters + string.digits) for _ in range(4))
+
+        path = 'media/PetSpace/'+PetSpaceID+'_'+random_string+'.jpg'
         with open(path, 'wb') as f:
             f.write(avatar)
+        pet = PetSpace.objects.get(PetSpaceID=PetSpaceID)
+        os.remove(pet.avatar[30:])
+        pet.avatar = host_name+path
+        pet.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -330,7 +342,7 @@ def addBill(request):
                      'type': type, 'money': money, 'PetSpaceID': PetSpaceID})
         user.bills = json.dumps(bills)
         user.save()
-        print(bills)
+        # print(bills)
 
         return JsonResponse({'status': 'success'})
     except Exception as e:
@@ -345,14 +357,14 @@ def showBills(request):
         cost = 0.0
 
         for bill in bills:
-            print(bill)
+            # print(bill)
             cost += float(bill['money'])
             pet = PetSpace.objects.get(PetSpaceID=bill['PetSpaceID'])
             bill['avatar'] = pet.avatar
             bill['name'] = pet.name
 
         data = {'bills': bills, 'cost': cost}
-        print(data)
+        # print(data)
         return JsonResponse(data)
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -387,7 +399,7 @@ def addShareUser(request):
         pet.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
-        print(e)
+        # print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -399,7 +411,7 @@ def showShareUsers(request):
         if permission(openid, PetSpaceID) == False:
             return JsonResponse({'status': 'Error', 'message': 'No permission'})
         shareUsers = json.loads(pet.shareUsers) if pet.shareUsers else []
-        print(shareUsers)
+        # print(shareUsers)
         data = []
         for openid in shareUsers:
             user = User.objects.get(openid=openid)
@@ -410,7 +422,7 @@ def showShareUsers(request):
             })
         return JsonResponse(data, safe=False)
     except Exception as e:
-        print(e)
+        # print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -435,7 +447,7 @@ def deleteShareUser(request):
         else:
             return JsonResponse({'status': 'Error', 'message': 'No such user'})
     except Exception as e:
-        print(e)
+        # print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -473,7 +485,6 @@ def setPublic(request):
         if operation == 'public' and pet.public == 0:
             pet.public = 1
             pet.save()
-            print(111)
             return JsonResponse({'status': 'success'})
         elif operation == 'private' and pet.public == 1:
             pet.public = 0
@@ -484,5 +495,7 @@ def setPublic(request):
                 article.PetSpaceID = '0'
                 article.save()
             return JsonResponse({'status': 'success'})
+        else:
+            return JsonResponse({'status': 'Error', 'message': 'operation error'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})

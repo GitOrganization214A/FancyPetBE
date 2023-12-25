@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from FancyPet.models import User, Article, PetSpace, Count, Comment, Activity
+from FancyPet.models import User, Article, PetSpace, Count, Comment, Activity, Video
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
 from .user_views import getUserInfo
@@ -93,6 +93,8 @@ def deleteArticle(request):
         user.atcnum -= 1
         user.save()
         article.delete()
+
+        Video.objects.filter(ArticleID=ArticleID).delete()
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})
@@ -349,6 +351,12 @@ def postArticle(request):
                 images.append({'url': host_name+path})
             article.images = json.dumps(images)
             article.save()
+
+            if path.endswith('.mp4'):
+                Video.objects.create(
+                    ArticleID=ArticleID,
+                    url=host_name+path,
+                )
             return JsonResponse({'ArticleID': ArticleID})
     except Exception as e:
         # print(e)
@@ -385,9 +393,16 @@ def viewUserInfo(request):
     try:
         openid = request.GET.get('openid')
         UserID = request.GET.get('UserID')
+        page = request.GET.get('page', 1)
         user = User.objects.get(UserID=UserID)
         articles = Article.objects.filter(openid=user.openid).order_by('-time')
-        articles_data = getArticlesDict(openid, articles)
+        paginator = Paginator(articles, articles_per_page)
+        try:
+            # 获取指定页的文章数据
+            paginated_data = paginator.page(page).object_list
+        except Exception:
+            paginated_data = []
+        articles_data = getArticlesDict(openid, paginated_data)
 
         petSpaces = PetSpace.objects.filter(openid=user.openid, public=1)
         pets = []

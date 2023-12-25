@@ -1,11 +1,14 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from FancyPet.models import User, Article, PetSpace, Count, Comment, Activity, Message
+from FancyPet.models import User, Article, PetSpace, Count, Comment, Activity, Message, Video
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
+import backend.config as config
 import requests
 import json
 import os
+import random
+import string
 
 
 host_name = 'http://43.143.139.4:8000/'
@@ -19,12 +22,15 @@ def changeAvatar(request):
     content = files.get('avatar', None).read()
     openid = request.POST.get('openid')
     print(openid)
-    with open('media/user/'+openid+'.jpg', 'wb') as f:
+    # 生成随机数
+    random_string = ''.join(random.choice(
+        string.ascii_letters + string.digits) for _ in range(4))
+    with open('media/user/'+openid+'_'+random_string+'.jpg', 'wb') as f:
         f.write(content)
     user = User.objects.filter(openid=openid)
     if user:
         user = user[0]
-        user.avatar = host_name+'media/user/'+openid+'.jpg'
+        user.avatar = host_name+'media/user/'+openid+'_'+random_string+'.jpg'
         user.save()
     return JsonResponse({'status': 'success'})
 
@@ -45,18 +51,18 @@ def changeInfo(request):
 
 
 def login(request):
-    code = request.GET.get('code')  # 从请求中获取code
+    code = request.GET.get('code')
     # 获取session_key和openid
-    url = "https://api.weixin.qq.com/sns/jscode2session"  # 微信服务器的URL
+    url = "https://api.weixin.qq.com/sns/jscode2session"
 
     params = {
-        "appid": "wx17396561c08eee6a",  # 你的微信AppID
-        "secret": "1553b8c2bdf47f280ffeb61c989e0f50",  # 你的微信AppSecret
+        "appid": config.appid,
+        "secret": config.secret,
         "js_code": code,
         "grant_type": "authorization_code"
     }
 
-    response = requests.get(url, params=params)  # 发送请求
+    response = requests.get(url, params=params)
     data = response.json()  # 解析响应
 
     # session_key = data.get('session_key')
@@ -246,5 +252,13 @@ def myFans(request):
 
 
 def init(request):
-    Message.objects.all().delete()
+    Video.objects.all().delete()
+    for article in Article.objects.all():
+        images = json.loads(article.images) if article.images else []
+        for image in images:
+            if image['url'].endswith('.mp4'):
+                Video.objects.create(
+                    ArticleID=article.ArticleID,
+                    url=image['url'],
+                )
     return JsonResponse({'status': 'success'})
