@@ -2,5 +2,7 @@
 /nohup.out
 /db.sqlite3
 /FancyPet/__pycache__/*
+/FancyPet/views/__pycache__/*
+/backend/__pycache__/*
 /backend/config.py
 ```
