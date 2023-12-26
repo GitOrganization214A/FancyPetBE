@@ -11,7 +11,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-import backend.config as config
+# import backend.config as config
+from decouple import config
+
+DATABASES_USER = config('DATABASES_USER')
+DATABASES_PASSWORD = config('DATABASES_PASSWORD')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -79,8 +83,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'fancypet',
-        'USER': config.databeses_user,
-        'PASSWORD': config.databeses_password,
+        'USER': DATABASES_USER,
+        'PASSWORD': DATABASES_PASSWORD,
         'HOST': 'localhost',
         'PORT': '3306',
         'OPTIONS': {

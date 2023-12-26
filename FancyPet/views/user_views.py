@@ -3,7 +3,8 @@ from django.http import JsonResponse
 from FancyPet.models import User, Article, PetSpace, Count, Comment, Activity, Message, Video
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
-import backend.config as config
+# import backend.config as config
+from decouple import config
 import requests
 import json
 import os
@@ -12,6 +13,8 @@ import string
 
 
 host_name = 'http://43.143.139.4:8000/'
+APPID = config('APPID')
+SECRET = config('SECRET')
 
 
 @csrf_exempt
@@ -56,8 +59,8 @@ def login(request):
     url = "https://api.weixin.qq.com/sns/jscode2session"
 
     params = {
-        "appid": config.appid,
-        "secret": config.secret,
+        "appid": APPID,
+        "secret": SECRET,
         "js_code": code,
         "grant_type": "authorization_code"
     }
