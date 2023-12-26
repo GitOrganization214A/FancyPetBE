@@ -66,6 +66,7 @@ class PetSpace(models.Model):
     name = models.CharField(max_length=255)
     breed = models.CharField(max_length=255)
     avatar = models.CharField(max_length=255)
+    birthday = models.CharField(max_length=255, default='2023-01-01')
     year = models.CharField(max_length=255, default='')
     month = models.CharField(max_length=255, default='')
     gender = models.CharField(max_length=255, default='')

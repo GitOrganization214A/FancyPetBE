@@ -4,6 +4,8 @@ from FancyPet.models import User, Article, PetSpace, Count, Comment, Activity
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
 from .forum_views import getArticlesDict
+from django.core.paginator import Paginator
+from datetime import datetime
 import requests
 import json
 import os
@@ -11,6 +13,7 @@ import random
 import string
 
 host_name = 'http://43.143.139.4:8000/'
+images_per_page = 27
 
 
 def permission(openid, PetSpaceID):
@@ -29,8 +32,7 @@ def newPetSpace(request):
     openid = request.POST.get('openid')
     name = request.POST.get('name', '未命名')
     breed = request.POST.get('breed', '未选择')
-    year = request.POST.get('year', '0')
-    month = request.POST.get('month', '1')
+    birthday = request.POST.get('birthday', '2023-01-01')
     gender = request.POST.get('gender', '未选择')
 
     random_string = ''.join(random.choice(
@@ -44,8 +46,7 @@ def newPetSpace(request):
         name=name,
         avatar=host_name+path,
         breed=breed,
-        year=year,
-        month=month,
+        birthday=birthday,
         gender=gender,
         images=json.dumps([]),
     )
@@ -62,6 +63,7 @@ def viewPetSpace(request):
     try:
         openid = request.GET.get('openid', '')
         PetSpaceID = request.GET.get('PetSpaceID')
+        page = request.GET.get('page', 1)
         petSpace = PetSpace.objects.get(PetSpaceID=PetSpaceID)
         if petSpace.public == 0 and permission(openid, PetSpaceID) == False:
             return JsonResponse({'status': 'Error', 'message': 'No permission'})
@@ -75,14 +77,27 @@ def viewPetSpace(request):
             role = 'shareUser'
         else:
             role = 'visitor'
+
+        paginator = Paginator(json.loads(petSpace.images), images_per_page)
+        try:
+            paginated_data = paginator.page(page).object_list
+        except Exception:
+            paginated_data = []
+
+        current_time = datetime.now().date()
+        birthday = datetime.strptime(petSpace.birthday, '%Y-%m-%d').date()
+        delta = current_time - birthday
+        petSpace.year = str(delta.days//365)
+        petSpace.month = str(delta.days//30)
         data = {
             'name': petSpace.name,
             'avatar': petSpace.avatar,
             'breed': petSpace.breed,
+            'birthday': petSpace.birthday,
             'year': petSpace.year,
             'month': petSpace.month,
             'gender': petSpace.gender,
-            'images': json.loads(petSpace.images),
+            'images': paginated_data,
             'role': role,
             'public': petSpace.public == 1,
         }
@@ -124,6 +139,10 @@ def deletePetSpace(request):
         if openid != pet.openid:
             return JsonResponse({'status': 'Error', 'message': 'No permission'})
 
+        images = json.loads(pet.images) if pet.images else []
+        for image in images:
+            os.remove(image[25:])
+
         pet.delete()
         for activity in Activity.objects.filter(PetSpaceID=PetSpaceID):
             activity.delete()
@@ -137,6 +156,7 @@ def deletePetSpace(request):
                     bill['PetSpaceID'] = '0'
             user.bills = json.dumps(bills)
             user.save()
+
         return JsonResponse({'status': 'success'})
 
     except ObjectDoesNotExist:
@@ -275,16 +295,14 @@ def changePetInfo(request):
         PetSpaceID = request.GET.get('PetSpaceID')
         name = request.GET.get('name')
         breed = request.GET.get('breed')
-        year = request.GET.get('year')
-        month = request.GET.get('month')
+        birthday = request.GET.get('birthday')
         gender = request.GET.get('gender')
         pet = PetSpace.objects.get(PetSpaceID=PetSpaceID)
         if permission(openid, PetSpaceID) == False:
             return JsonResponse({'status': 'Error', 'message': 'No permission'})
         pet.name = name
         pet.breed = breed
-        pet.year = year
-        pet.month = month
+        pet.birthday = birthday
         pet.gender = gender
         pet.save()
         return JsonResponse({'status': 'success'})
@@ -309,7 +327,7 @@ def changePetAvatar(request):
         with open(path, 'wb') as f:
             f.write(avatar)
         pet = PetSpace.objects.get(PetSpaceID=PetSpaceID)
-        os.remove(pet.avatar[30:])
+        os.remove(pet.avatar[25:])
         pet.avatar = host_name+path
         pet.save()
         return JsonResponse({'status': 'success'})
@@ -331,11 +349,13 @@ def petArticles(request):
 def addBill(request):
     try:
         openid = request.GET.get('openid')
-        PetSpaceID = request.GET.get('PetSpaceID', 0)
+        PetSpaceID = request.GET.get('PetSpaceID', '0')
         date = request.GET.get('date')
         content = request.GET.get('content', '')
         type = request.GET.get('type', '')
         money = request.GET.get('money', 0.0)
+        if PetSpaceID == '':
+            PetSpaceID = '0'
         user = User.objects.get(openid=openid)
         bills = json.loads(user.bills) if user.bills else []
         bills.insert(0, {'date': date, 'content': content,
@@ -359,14 +379,17 @@ def showBills(request):
         for bill in bills:
             # print(bill)
             cost += float(bill['money'])
-            pet = PetSpace.objects.get(PetSpaceID=bill['PetSpaceID'])
-            bill['avatar'] = pet.avatar
-            bill['name'] = pet.name
+            pet = None
+            print(bill['PetSpaceID'])
+            if bill['PetSpaceID'] != '0':
+                pet = PetSpace.objects.get(PetSpaceID=bill['PetSpaceID'])
+                bill['avatar'] = pet.avatar
+                bill['name'] = pet.name
 
         data = {'bills': bills, 'cost': cost}
-        # print(data)
         return JsonResponse(data)
     except Exception as e:
+        print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -393,7 +416,11 @@ def addShareUser(request):
         if openid != pet.openid:
             return JsonResponse({'status': 'Error', 'message': 'No permission'})
         user = User.objects.get(UserID=UserID)
+        if openid == user.openid:
+            return JsonResponse({'status': 'Error', 'message': 'Can not share to yourself'})
         shareUsers = json.loads(pet.shareUsers) if pet.shareUsers else []
+        if user.openid in shareUsers:
+            return JsonResponse({'status': 'Error', 'message': 'Already shared'})
         shareUsers.append(user.openid)
         pet.shareUsers = json.dumps(shareUsers)
         pet.save()
@@ -409,10 +436,16 @@ def showShareUsers(request):
         PetSpaceID = request.GET.get('PetSpaceID')
         pet = PetSpace.objects.get(PetSpaceID=PetSpaceID)
         if permission(openid, PetSpaceID) == False:
-            return JsonResponse({'status': 'Error', 'message': 'No permission'})
+            return JsonResponse([], safe=False)
         shareUsers = json.loads(pet.shareUsers) if pet.shareUsers else []
-        # print(shareUsers)
+        print(shareUsers)
         data = []
+        owner = User.objects.get(openid=pet.openid)
+        data.append({
+            'UserID': owner.UserID,
+            'nickname': owner.nickname,
+            'avatar': owner.avatar,
+        })
         for openid in shareUsers:
             user = User.objects.get(openid=openid)
             data.append({
@@ -420,9 +453,10 @@ def showShareUsers(request):
                 'nickname': user.nickname,
                 'avatar': user.avatar,
             })
+        print(data)
         return JsonResponse(data, safe=False)
     except Exception as e:
-        # print(e)
+        print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 

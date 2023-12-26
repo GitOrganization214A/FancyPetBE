@@ -83,14 +83,14 @@ def login(request):
     else:
         count = Count.objects.get(CountID="1")
         user = User.objects.create(
-            openid=openid, nickname="nickname", avatar=host_name+'media/user/logo.png', UserID=str(count.UserNum))
+            openid=openid, nickname='微信用户'+str(count.UserNum), avatar=host_name+'media/user/logo.png', UserID=str(count.UserNum))
         count.UserNum += 1
         count.save()
         data = {
             'openid': openid,
             'UserID': user.UserID,
-            'nickname': 'nickname',
-            'avatar': host_name+'media/user/logo.png',
+            'nickname': user.nickname,
+            'avatar': user.avatar,
             'follow': 0,
             'atcnum': 0,
             'fans': 0,
@@ -125,7 +125,7 @@ def showMessages(request):
         me.newMessage = 0
         me.save()
 
-        messages = Message.objects.filter(openid=openid)
+        messages = Message.objects.filter(openid=openid).order_by('-time')
         data = []
         for message in messages:
             user = User.objects.get(UserID=message.UserID)
@@ -136,6 +136,7 @@ def showMessages(request):
                     'wxid': message.wxid,
                     'UserID': message.UserID,
                     'nickname': user.nickname,
+                    'avatar': user.avatar,
                     'PetSpaceID': message.PetSpaceID1,
                     'PetName': pet.name,
                     'content': message.content,
@@ -150,6 +151,7 @@ def showMessages(request):
                     'wxid': message.wxid,
                     'UserID': message.UserID,
                     'nickname': user.nickname,
+                    'avatar': user.avatar,
                     'PetSpaceID1': message.PetSpaceID1,
                     'PetSpaceID2': message.PetSpaceID2,
                     'PetName1': pet1.name,
@@ -166,6 +168,7 @@ def showMessages(request):
                     'wxid': message.wxid,
                     'UserID': message.UserID,
                     'nickname': user.nickname,
+                    'avatar': user.avatar,
                     'ActivityID': message.ActivityID,
                     'ActivityName': activity.title,
                     'time': message.time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -252,13 +255,14 @@ def myFans(request):
 
 
 def init(request):
-    Video.objects.all().delete()
-    for article in Article.objects.all():
-        images = json.loads(article.images) if article.images else []
-        for image in images:
-            if image['url'].endswith('.mp4'):
-                Video.objects.create(
-                    ArticleID=article.ArticleID,
-                    url=image['url'],
-                )
-    return JsonResponse({'status': 'success'})
+    try:
+        Article.objects.all().delete()
+        Comment.objects.all().delete()
+        for user in User.objects.all():
+            user.likedArticles = json.dumps([])
+            user.likedComments = json.dumps([])
+            user.atcnum = 0
+            user.save()
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'Error', 'message': str(e)})
