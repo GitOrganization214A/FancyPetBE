@@ -86,7 +86,7 @@ def login(request):
     else:
         count = Count.objects.get(CountID="1")
         user = User.objects.create(
-            openid=openid, nickname='微信用户'+str(count.UserNum), avatar=host_name+'media/user/logo.png', UserID=str(count.UserNum))
+            openid=openid, nickname='微信用户'+str(count.UserNum), avatar=host_name+'media/user/logo.jpg', UserID=str(count.UserNum))
         count.UserNum += 1
         count.save()
         data = {
@@ -259,13 +259,9 @@ def myFans(request):
 
 def init(request):
     try:
-        Article.objects.all().delete()
-        Comment.objects.all().delete()
-        for user in User.objects.all():
-            user.likedArticles = json.dumps([])
-            user.likedComments = json.dumps([])
-            user.atcnum = 0
-            user.save()
-        return JsonResponse({'status': 'success'})
+        for article in Article.objects.all():
+            print(article.title)
+            print(article.combined_score)
+        return JsonResponse({'status': 'succes'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})

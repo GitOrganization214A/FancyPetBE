@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
-import json
-import pytz
+from django.db.models import F, ExpressionWrapper, fields
+
 # Create your models here.
 
 
@@ -57,6 +57,13 @@ class Article(models.Model):
     comment = models.IntegerField(default=0)
     read = models.IntegerField(default=0)
     share = models.IntegerField(default=0)
+
+    combined_score = models.FloatField(default=0)
+
+    def save(self, *args, **kwargs):
+        self.combined_score = self.like + self.comment*2 + self.read / \
+            50 + self.share*3+(self.time.timestamp() / 10000000)
+        super(Article, self).save(*args, **kwargs)
 
 
 class PetSpace(models.Model):

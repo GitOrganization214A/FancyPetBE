@@ -5,4 +5,4 @@
 /backend/config.py
 /backend/__pycache__/
 /FancyPet/views/__pycache__/
-/.env/
+/.env

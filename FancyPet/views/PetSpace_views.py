@@ -87,8 +87,13 @@ def viewPetSpace(request):
         current_time = datetime.now().date()
         birthday = datetime.strptime(petSpace.birthday, '%Y-%m-%d').date()
         delta = current_time - birthday
-        petSpace.year = str(delta.days//365)
-        petSpace.month = str(delta.days//30)
+        year = delta.days//365
+        month = (delta.days-year*365)//30
+        if month == 12:
+            year += 1
+            month = 0
+        petSpace.year = str(year)
+        petSpace.month = str(month)
         data = {
             'name': petSpace.name,
             'avatar': petSpace.avatar,

@@ -5,11 +5,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
 from .user_views import getUserInfo
 from django.db.models import Q
-from django.contrib.postgres.search import SearchQuery
+from django.db.models import F, ExpressionWrapper, fields
 from django.core.paginator import Paginator
-from django.db.models import F
+from datetime import datetime
 
-import requests
 import json
 import os
 
@@ -323,6 +322,7 @@ def postArticle(request):
                 title=title,
                 content=content,
                 images=json.dumps(images),
+                time=datetime.now()
             )
             count.ArticleNum += 1
             count.save()
@@ -333,6 +333,7 @@ def postArticle(request):
                 pet = PetSpace.objects.get(PetSpaceID=PetSpaceID)
                 pet.public = 1
                 pet.save()
+
             return JsonResponse({'ArticleID': str(count.ArticleNum-1)})
         else:
             ArticleID = request.POST.get('ArticleID')
@@ -359,7 +360,7 @@ def postArticle(request):
                 )
             return JsonResponse({'ArticleID': ArticleID})
     except Exception as e:
-        # print(e)
+        print(e)
         return JsonResponse({'status': 'Error', 'message': str(e)})
 
 
@@ -369,7 +370,7 @@ def HotArticles(request):
         page = request.GET.get('page', 1)
 
         # 获取数据库中所有的Article对象
-        articles = Article.objects.all().order_by('-like')
+        articles = Article.objects.all().order_by('-combined_score')
 
         # 创建Paginator对象
         paginator = Paginator(articles, articles_per_page)
@@ -499,7 +500,7 @@ def searchArticlesHot(request):
         keyword = request.GET.get('keyword')
         page = request.GET.get('page', 1)
         articles = Article.objects.filter(
-            Q(title__contains=keyword) | Q(content__contains=keyword) | Q(zone__contains=keyword) | Q(subzone__contains=keyword)).order_by('-like')
+            Q(title__contains=keyword) | Q(content__contains=keyword) | Q(zone__contains=keyword) | Q(subzone__contains=keyword)).order_by('-combined_score')
         num = len(articles)
         # 创建Paginator对象
         paginator = Paginator(articles, articles_per_page)
@@ -560,12 +561,12 @@ def viewZoneArticlesHot(request):
         page = request.GET.get('page', 1)
         if subzone != '':
             articles = Article.objects.filter(
-                subzone=subzone).order_by('-like')
+                subzone=subzone).order_by('-combined_score')
         elif zone != '':
             articles = Article.objects.filter(
-                zone=zone).order_by('-like')
+                zone=zone).order_by('-combined_score')
         else:
-            articles = Article.objects.all().order_by('-like')
+            articles = Article.objects.all().order_by('-combined_score')
 
         # 创建Paginator对象
         paginator = Paginator(articles, articles_per_page)

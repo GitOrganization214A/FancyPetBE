@@ -85,7 +85,7 @@ DATABASES = {
         'NAME': 'fancypet',
         'USER': DATABASES_USER,
         'PASSWORD': DATABASES_PASSWORD,
-        'HOST': 'localhost',
+        'HOST': 'mysql',
         'PORT': '3306',
         'OPTIONS': {
             'charset': 'utf8mb4',
