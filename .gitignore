@@ -6,3 +6,4 @@
 /backend/__pycache__/
 /FancyPet/views/__pycache__/
 /.env
+/mysql_data/

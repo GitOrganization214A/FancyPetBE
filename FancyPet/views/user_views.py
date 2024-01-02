@@ -33,6 +33,8 @@ def changeAvatar(request):
     user = User.objects.filter(openid=openid)
     if user:
         user = user[0]
+        if user.avatar != host_name+'media/user/logo.jpg':
+            os.remove(user.avatar[25:])
         user.avatar = host_name+'media/user/'+openid+'_'+random_string+'.jpg'
         user.save()
     return JsonResponse({'status': 'success'})
@@ -84,7 +86,12 @@ def login(request):
             'newMessage': user.newMessage,
         }
     else:
-        count = Count.objects.get(CountID="1")
+        counts = Count.objects.filter(CountID="1")
+        if counts:
+            count = counts[0]
+        else:
+            count = Count.objects.create(
+                CountID="1", UserNum=1, PetSpaceNum=1, ArticleNum=1, ActivityNum=1, CommentNum=1, MessageNum=1)
         user = User.objects.create(
             openid=openid, nickname='微信用户'+str(count.UserNum), avatar=host_name+'media/user/logo.jpg', UserID=str(count.UserNum))
         count.UserNum += 1
@@ -259,9 +266,6 @@ def myFans(request):
 
 def init(request):
     try:
-        for article in Article.objects.all():
-            print(article.title)
-            print(article.combined_score)
-        return JsonResponse({'status': 'succes'})
+        return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'Error', 'message': str(e)})

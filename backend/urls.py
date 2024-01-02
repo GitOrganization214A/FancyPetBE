@@ -88,4 +88,9 @@ urlpatterns = [
     path('api/v1/deleteShareUser/', views.deleteShareUser, name='deleteShareUser'),
     path('api/v1/changeOwner/', views.changeOwner, name='changeOwner'),
     path('api/v1/setPublic/', views.setPublic, name='setPublic'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)

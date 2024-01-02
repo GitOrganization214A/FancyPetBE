@@ -352,6 +352,7 @@ def postArticle(request):
                 images.append({'url': host_name+path})
             article.images = json.dumps(images)
             article.save()
+            print(images)
 
             if path.endswith('.mp4'):
                 Video.objects.create(
